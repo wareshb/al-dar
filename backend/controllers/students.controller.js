@@ -3,7 +3,7 @@ const db = require('../config/db');
 // الحصول على جميع الطلاب مع إمكانية البحث والفلترة
 exports.getAllStudents = async (req, res) => {
     try {
-        const { search, academic_level, page = 1, limit = 50 } = req.query;
+        const { search, academic_level, halaqa_id, is_active, page = 1, limit = 50 } = req.query;
         const offset = (page - 1) * limit;
 
         let query = `SELECT s.*, 
@@ -26,23 +26,45 @@ exports.getAllStudents = async (req, res) => {
             params.push(academic_level);
         }
 
+        // الفلترة حسب الحلقة
+        if (halaqa_id) {
+            query += ` AND EXISTS (SELECT 1 FROM halaqa_enrollments he WHERE he.student_id = s.id AND he.halaqa_id = ? AND he.is_active = true)`;
+            params.push(halaqa_id);
+        }
+
+        // الفلترة حسب الحالة
+        if (is_active !== undefined && is_active !== '') {
+            query += ` AND s.is_active = ?`;
+            params.push(is_active === 'true' || is_active === true || is_active === '1' ? 1 : 0);
+        }
+
         query += ` ORDER BY s.registration_date DESC, s.full_name ASC LIMIT ? OFFSET ?`;
         params.push(parseInt(limit), parseInt(offset));
 
         const [students] = await db.query(query, params);
 
         // عدد الطلاب الكلي
-        let countQuery = `SELECT COUNT(*) as total FROM students WHERE 1=1`;
+        let countQuery = `SELECT COUNT(*) as total FROM students s WHERE 1=1`;
         const countParams = [];
 
         if (search) {
-            countQuery += ` AND full_name LIKE ?`;
+            countQuery += ` AND s.full_name LIKE ?`;
             countParams.push(`%${search}%`);
         }
 
         if (academic_level) {
-            countQuery += ` AND academic_level = ?`;
+            countQuery += ` AND s.academic_level = ?`;
             countParams.push(academic_level);
+        }
+
+        if (halaqa_id) {
+            countQuery += ` AND EXISTS (SELECT 1 FROM halaqa_enrollments he WHERE he.student_id = s.id AND he.halaqa_id = ? AND he.is_active = true)`;
+            countParams.push(halaqa_id);
+        }
+
+        if (is_active !== undefined && is_active !== '') {
+            countQuery += ` AND s.is_active = ?`;
+            countParams.push(is_active === 'true' || is_active === true || is_active === '1' ? 1 : 0);
         }
 
         const [countResult] = await db.query(countQuery, countParams);

@@ -1,26 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, DatePicker, Switch } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, DatePicker, Switch, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { getStudents, createStudent, updateStudent, deleteStudent } from '../../services/studentService';
+import { getHalaqat } from '../../services/halaqaService';
+import { FilterOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Option } = Select;
 
 const Students = () => {
     const [students, setStudents] = useState([]);
+    const [halaqat, setHalaqat] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingStudent, setEditingStudent] = useState(null);
     const [form] = Form.useForm();
 
+    // Filter states
+    const [searchText, setSearchText] = useState('');
+    const [selectedHalaqa, setSelectedHalaqa] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState(null);
+
     useEffect(() => {
         loadStudents();
+        loadHalaqat();
     }, []);
+
+    const loadHalaqat = async () => {
+        try {
+            const result = await getHalaqat();
+            if (result.success) {
+                setHalaqat(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading halaqat:', error);
+        }
+    };
 
     const loadStudents = async () => {
         setLoading(true);
         try {
-            const result = await getStudents();
+            const params = {};
+            if (searchText) params.search = searchText;
+            if (selectedHalaqa) params.halaqa_id = selectedHalaqa;
+            if (selectedStatus !== null && selectedStatus !== undefined) params.is_active = selectedStatus;
+
+            const result = await getStudents(params);
             if (result.success) {
                 setStudents(result.data);
             }
@@ -92,6 +117,21 @@ const Students = () => {
         }
     };
 
+    const handleSearch = () => {
+        loadStudents();
+    };
+
+    const handleReset = () => {
+        setSearchText('');
+        setSelectedHalaqa(null);
+        setSelectedStatus(null);
+        setLoading(true);
+        getStudents().then(result => {
+            if (result.success) setStudents(result.data);
+            setLoading(false);
+        });
+    };
+
     const columns = [
         {
             title: 'المعرف',
@@ -102,6 +142,12 @@ const Students = () => {
             title: 'الاسم الكامل',
             dataIndex: 'full_name',
             key: 'full_name',
+        },
+        {
+            title: 'الحلقة',
+            dataIndex: 'halaqa_name',
+            key: 'halaqa_name',
+            render: (name) => name || <Tag color="default">غير مسجل</Tag>,
         },
         {
             title: 'الجنس',
@@ -124,7 +170,7 @@ const Students = () => {
             title: 'الحالة',
             dataIndex: 'is_active',
             key: 'is_active',
-            render: (active) => (active ? 'نشط' : 'غير نشط'),
+            render: (active) => (active ? <Tag color="success">نشط</Tag> : <Tag color="error">غير نشط</Tag>),
         },
         {
             title: 'إجراءات',
@@ -134,6 +180,7 @@ const Students = () => {
                     <Button
                         icon={<EditOutlined />}
                         onClick={() => showModal(record)}
+                        title="تعديل"
                     />
                     <Popconfirm
                         title="هل أنت متأكد من حذف هذا الطالب؟"
@@ -141,7 +188,7 @@ const Students = () => {
                         okText="نعم"
                         cancelText="لا"
                     >
-                        <Button icon={<DeleteOutlined />} danger />
+                        <Button icon={<DeleteOutlined />} danger title="حذف" />
                     </Popconfirm>
                 </Space>
             ),
@@ -158,6 +205,46 @@ const Students = () => {
                 إضافة طالب جديد
             </Button>
         }>
+            <div style={{ marginBottom: 20 }}>
+                <Space wrap>
+                    <Input
+                        placeholder="بحث بالاسم..."
+                        prefix={<SearchOutlined />}
+                        value={searchText}
+                        onChange={e => setSearchText(e.target.value)}
+                        onPressEnter={handleSearch}
+                        style={{ width: 200 }}
+                    />
+                    <Select
+                        placeholder="فلترة بالحلقة"
+                        style={{ width: 180 }}
+                        allowClear
+                        value={selectedHalaqa}
+                        onChange={setSelectedHalaqa}
+                    >
+                        {halaqat.map(h => (
+                            <Option key={h.id} value={h.id}>{h.name}</Option>
+                        ))}
+                    </Select>
+                    <Select
+                        placeholder="الحالة"
+                        style={{ width: 120 }}
+                        allowClear
+                        value={selectedStatus}
+                        onChange={setSelectedStatus}
+                    >
+                        <Option value="true">نشط</Option>
+                        <Option value="false">غير نشط</Option>
+                    </Select>
+                    <Button type="primary" icon={<FilterOutlined />} onClick={loadStudents}>
+                        تطبيق الفلتر
+                    </Button>
+                    <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                        إعادة تعيين
+                    </Button>
+                </Space>
+            </div>
+
             <Table
                 columns={columns}
                 dataSource={students}

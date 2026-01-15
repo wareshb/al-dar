@@ -20,8 +20,8 @@ exports.recordMemorization = async (req, res) => {
         const [result] = await db.query(
             `INSERT INTO memorization 
        (student_id, month, year, start_surah_id, start_ayah, end_surah_id, end_ayah, 
-        quality_rating, reviewed_by, notes) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        type, quality_rating, reviewed_by, notes) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 student_id,
                 month,
@@ -30,6 +30,7 @@ exports.recordMemorization = async (req, res) => {
                 start_ayah || null,
                 end_surah_id || null,
                 end_ayah || null,
+                req.body.type || 'memo',
                 quality_rating || 5,
                 reviewed_by,
                 notes || null
@@ -199,6 +200,71 @@ exports.deleteMemorization = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'حدث خطأ أثناء حذف سجل الحفظ'
+        });
+    }
+};
+
+// الحصول على طلاب الحلقة مع آخر إنجاز لكل منهم
+exports.getHalaqaStudentsWithProgress = async (req, res) => {
+    try {
+        const { halaqaId } = req.params;
+
+        // الحصول على جميع الطلاب في الحلقة
+        const [students] = await db.query(
+            `SELECT s.id as student_id, s.full_name as student_name
+             FROM halaqa_enrollments he
+             JOIN students s ON he.student_id = s.id
+             WHERE he.halaqa_id = ? AND he.is_active = true
+             ORDER BY s.full_name ASC`,
+            [halaqaId]
+        );
+
+        // الحصول على آخر إنجاز لكل طالب
+        const studentIds = students.map(s => s.student_id);
+        if (studentIds.length === 0) {
+            return res.json({ success: true, data: [] });
+        }
+
+        const [latestRecords] = await db.query(
+            `SELECT m.*, s1.name as start_surah_name, s2.name as end_surah_name
+             FROM memorization m
+             LEFT JOIN surahs s1 ON m.start_surah_id = s1.id
+             LEFT JOIN surahs s2 ON m.end_surah_id = s2.id
+             WHERE (m.student_id, m.year, m.month, m.id) IN (
+                 SELECT student_id, year, month, MAX(id)
+                 FROM memorization
+                 WHERE (student_id, year, month) IN (
+                     SELECT student_id, MAX(year), MAX(month)
+                     FROM memorization
+                     WHERE student_id IN (?)
+                     GROUP BY student_id
+                 )
+                 GROUP BY student_id, year, month
+             )
+             ORDER BY m.year DESC, m.month DESC, m.id DESC`,
+            [studentIds]
+        );
+
+        // دمج البيانات
+        const progressMap = {};
+        latestRecords.forEach(rec => {
+            progressMap[rec.student_id] = rec;
+        });
+
+        const result = students.map(s => ({
+            ...s,
+            latest_memorization: progressMap[s.student_id] || null
+        }));
+
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error('Get halaqa students with progress error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'حدث خطأ أثناء جلب بيانات الطلاب'
         });
     }
 };

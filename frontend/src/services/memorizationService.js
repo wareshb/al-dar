@@ -15,8 +15,20 @@ export const getStudentProgress = async (studentId) => {
     return response.data;
 };
 
+export const getHalaqaProgress = async (halaqaId) => {
+    const response = await api.get(`/memorization/halaqa/${halaqaId}`);
+    return response.data;
+};
+
+export const getSurahs = async () => {
+    const response = await api.get('/memorization/surahs');
+    return response.data;
+};
+
 export default {
     getMemorization,
     recordMemorization,
-    getStudentProgress
+    getStudentProgress,
+    getHalaqaProgress,
+    getSurahs
 };

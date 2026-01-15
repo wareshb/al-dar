@@ -15,6 +15,9 @@ router.post('/', memorizationController.recordMemorization);
 // الحصول على سجل حفظ طالب
 router.get('/student/:studentId', memorizationController.getStudentMemorization);
 
+// الحصول على طلاب الحلقة مع الإنجازات
+router.get('/halaqa/:halaqaId', memorizationController.getHalaqaStudentsWithProgress);
+
 // الحصول على سجلات الحفظ لشهر معين
 router.get('/month', memorizationController.getMemorizationByMonth);
 
