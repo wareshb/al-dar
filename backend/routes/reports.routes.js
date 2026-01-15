@@ -15,6 +15,9 @@ router.get('/general', reportsController.getGeneralReport);
 // تقرير الحضور
 router.get('/attendance', reportsController.getAttendanceReport);
 
+// تقرير حضور المعلمين والموظفين
+router.get('/staff-attendance', reportsController.getStaffAttendanceReport);
+
 // تقرير الحفظ
 router.get('/memorization', reportsController.getMemorizationReport);
 

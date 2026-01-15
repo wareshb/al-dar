@@ -20,9 +20,15 @@ export const getAttendanceReport = async (params) => {
     return response.data;
 };
 
+export const getStaffAttendanceReport = async (params) => {
+    const response = await api.get('/reports/staff-attendance', { params });
+    return response.data;
+};
+
 export default {
     getGeneralReport,
     getTeacherReport,
     getStudentReport,
-    getAttendanceReport
+    getAttendanceReport,
+    getStaffAttendanceReport
 };

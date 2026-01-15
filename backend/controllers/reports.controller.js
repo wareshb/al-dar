@@ -98,6 +98,68 @@ exports.getAttendanceReport = async (req, res) => {
     }
 };
 
+// تقرير حضور الموظفين
+exports.getStaffAttendanceReport = async (req, res) => {
+    try {
+        const { start_date, end_date, teacher_id } = req.query;
+
+        if (!start_date || !end_date) {
+            return res.status(400).json({
+                success: false,
+                message: 'يرجى تحديد تاريخ البداية والنهاية'
+            });
+        }
+
+        let query = `
+      SELECT 
+        t.id as teacher_id,
+        t.full_name as teacher_name,
+        t.staff_type,
+        COUNT(sa.id) as total_days,
+        SUM(CASE WHEN sa.status = 'present' THEN 1 ELSE 0 END) as present_days,
+        SUM(CASE WHEN sa.status = 'absent' THEN 1 ELSE 0 END) as absent_days,
+        SUM(CASE WHEN sa.status = 'late' THEN 1 ELSE 0 END) as late_days,
+        SUM(CASE WHEN sa.status = 'excused' THEN 1 ELSE 0 END) as excused_days,
+        SUM(CASE WHEN sa.status = 'sick_leave' THEN 1 ELSE 0 END) as sick_leave_days,
+        SUM(CASE WHEN sa.status = 'vacation' THEN 1 ELSE 0 END) as vacation_days,
+        ROUND((SUM(CASE WHEN sa.status = 'present' THEN 1 ELSE 0 END) / COUNT(sa.id)) * 100, 2) as attendance_percentage
+      FROM teachers t
+      LEFT JOIN staff_attendances sa ON t.id = sa.teacher_id AND sa.attendance_date BETWEEN ? AND ?
+    `;
+
+        const params = [start_date, end_date];
+        const whereConditions = [];
+
+        if (teacher_id) {
+            whereConditions.push('t.id = ?');
+            params.push(teacher_id);
+        }
+
+        if (whereConditions.length > 0) {
+            query += ` WHERE ${whereConditions.join(' AND ')}`;
+        }
+
+        query += ` GROUP BY t.id, t.full_name, t.staff_type
+               HAVING total_days > 0
+               ORDER BY t.full_name ASC`;
+
+        const [report] = await db.query(query, params);
+
+        res.json({
+            success: true,
+            data: report,
+            count: report.length,
+            period: { start_date, end_date }
+        });
+    } catch (error) {
+        console.error('Get staff attendance report error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'حدث خطأ أثناء إنشاء تقرير حضور الموظفين'
+        });
+    }
+};
+
 // تقرير الحفظ
 exports.getMemorizationReport = async (req, res) => {
     try {
