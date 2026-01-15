@@ -9,6 +9,7 @@ import Teachers from './pages/Teachers/Teachers';
 import Students from './pages/Students/Students';
 import Halaqat from './pages/Halaqat/Halaqat';
 import Attendance from './pages/Attendance/Attendance';
+import StaffAttendance from './pages/StaffAttendance/StaffAttendance';
 import Memorization from './pages/Memorization/Memorization';
 import Violations from './pages/Violations/Violations';
 import Reports from './pages/Reports/Reports';
@@ -90,6 +91,17 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Attendance />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/staff-attendance"
+              element={
+                <PrivateRoute>
+                  <MainLayout>
+                    <StaffAttendance />
                   </MainLayout>
                 </PrivateRoute>
               }

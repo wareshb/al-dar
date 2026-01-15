@@ -58,7 +58,12 @@ const MainLayout = ({ children }) => {
         {
             key: '/attendance',
             icon: <CheckSquareOutlined />,
-            label: 'الحضور',
+            label: 'حضور الطلاب',
+        },
+        {
+            key: '/staff-attendance',
+            icon: <TeamOutlined />,
+            label: 'حضور المعلمين',
         },
         {
             key: '/memorization',

@@ -9,6 +9,7 @@ const teachersRoutes = require('./routes/teachers.routes');
 const studentsRoutes = require('./routes/students.routes');
 const halaqatRoutes = require('./routes/halaqat.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
+const staffAttendanceRoutes = require('./routes/staffAttendance.routes');
 const memorizationRoutes = require('./routes/memorization.routes');
 const violationsRoutes = require('./routes/violations.routes');
 const reportsRoutes = require('./routes/reports.routes');
@@ -31,6 +32,7 @@ app.use('/api/teachers', teachersRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/halaqat', halaqatRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/staff-attendance', staffAttendanceRoutes);
 app.use('/api/memorization', memorizationRoutes);
 app.use('/api/violations', violationsRoutes);
 app.use('/api/reports', reportsRoutes);
@@ -48,6 +50,7 @@ app.get('/', (req, res) => {
       students: '/api/students',
       halaqat: '/api/halaqat',
       attendance: '/api/attendance',
+      staffAttendance: '/api/staff-attendance',
       memorization: '/api/memorization',
       violations: '/api/violations',
       reports: '/api/reports',

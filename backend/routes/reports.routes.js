@@ -9,6 +9,9 @@ router.use(authMiddleware);
 // تقرير شامل عن الطلاب
 router.get('/students', reportsController.getStudentsReport);
 
+// تقرير عام
+router.get('/general', reportsController.getGeneralReport);
+
 // تقرير الحضور
 router.get('/attendance', reportsController.getAttendanceReport);
 

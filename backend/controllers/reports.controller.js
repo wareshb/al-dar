@@ -36,7 +36,7 @@ exports.getStudentsReport = async (req, res) => {
 // تقرير الحضور
 exports.getAttendanceReport = async (req, res) => {
     try {
-        const { start_date, end_date, halaqa_id } = req.query;
+        const { start_date, end_date, halaqa_id, student_id } = req.query;
 
         if (!start_date || !end_date) {
             return res.status(400).json({
@@ -61,10 +61,20 @@ exports.getAttendanceReport = async (req, res) => {
     `;
 
         const params = [start_date, end_date];
+        const whereConditions = [];
 
         if (halaqa_id) {
-            query += ` WHERE h.id = ?`;
+            whereConditions.push('h.id = ?');
             params.push(halaqa_id);
+        }
+
+        if (student_id) {
+            whereConditions.push('s.id = ?');
+            params.push(student_id);
+        }
+
+        if (whereConditions.length > 0) {
+            query += ` WHERE ${whereConditions.join(' AND ')}`;
         }
 
         query += ` GROUP BY s.id, s.full_name, h.name
@@ -137,6 +147,66 @@ exports.getMemorizationReport = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'حدث خطأ أثناءإنشاء تقرير الحفظ'
+        });
+    }
+};
+
+// تقرير عام (إحصائيات)
+exports.getGeneralReport = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        // إجمالي الحفظ
+        const [memorizationCount] = await db.query(
+            `SELECT COUNT(*) as count FROM memorization WHERE created_at BETWEEN ? AND ?`,
+            [startDate, endDate]
+        );
+
+        // نسبة الحضور
+        const [attendance] = await db.query(
+            `SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) as present
+             FROM attendances 
+             WHERE attendance_date BETWEEN ? AND ?`,
+            [startDate, endDate]
+        );
+
+        // أكثر الطلاب إنجازاً
+        const [topStudents] = await db.query(
+            `SELECT 
+                s.id as student_id,
+                s.full_name,
+                COUNT(m.id) as total_achievement,
+                AVG(m.quality_rating) as avg_rating
+             FROM students s
+             JOIN memorization m ON s.id = m.student_id
+             WHERE m.created_at BETWEEN ? AND ?
+             GROUP BY s.id, s.full_name
+             ORDER BY total_achievement DESC
+             LIMIT 10`,
+            [startDate, endDate]
+        );
+
+        res.json({
+            success: true,
+            data: {
+                totalMemorization: memorizationCount[0].count,
+                totalReview: 0, // لا يوجد تمييز في الجدول الحالي
+                attendanceRate: attendance[0].total > 0
+                    ? parseFloat(((attendance[0].present / attendance[0].total) * 100).toFixed(2))
+                    : 0,
+                topStudents: topStudents.map(s => ({
+                    ...s,
+                    avg_rating: parseFloat(s.avg_rating) || 0
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('Get general report error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'حدث خطأ أثناء إنشاء التقرير العام'
         });
     }
 };

@@ -15,8 +15,14 @@ export const getStudentReport = async (studentId, params) => {
     return response.data;
 };
 
+export const getAttendanceReport = async (params) => {
+    const response = await api.get('/reports/attendance', { params });
+    return response.data;
+};
+
 export default {
     getGeneralReport,
     getTeacherReport,
-    getStudentReport
+    getStudentReport,
+    getAttendanceReport
 };
