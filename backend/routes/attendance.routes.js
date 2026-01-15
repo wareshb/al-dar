@@ -12,6 +12,9 @@ router.post('/', attendanceController.recordAttendance);
 // الحصول على الحضور لتاريخ معين
 router.get('/date/:date', attendanceController.getAttendanceByDate);
 
+// الحصول على حضور حلقة معينة
+router.get('/halaqa/:halaqaId', attendanceController.getHalaqaAttendance);
+
 // الحصول على سجل حضور طالب
 router.get('/student/:studentId', attendanceController.getStudentAttendance);
 

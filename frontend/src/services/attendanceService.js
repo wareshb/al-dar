@@ -15,8 +15,26 @@ export const getHalaqaAttendance = async (halaqaId, date) => {
     return response.data;
 };
 
+export const getAttendanceByDate = async (date) => {
+    const response = await api.get(`/attendance/date/${date}`);
+    return response.data;
+};
+
+export const getStudentAttendance = async (studentId, params = {}) => {
+    const response = await api.get(`/attendance/student/${studentId}`, { params });
+    return response.data;
+};
+
+export const updateAttendance = async (id, data) => {
+    const response = await api.put(`/attendance/${id}`, data);
+    return response.data;
+};
+
 export default {
     getAttendance,
     recordAttendance,
-    getHalaqaAttendance
+    getHalaqaAttendance,
+    getAttendanceByDate,
+    getStudentAttendance,
+    updateAttendance
 };
