@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// إنشاء نسخة Axios مخصصة
+// إنشاء نسخة Axios  همخصصة
 const api = axios.create({
     baseURL: '/api',
     headers: {
