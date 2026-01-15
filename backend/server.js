@@ -15,6 +15,7 @@ const violationsRoutes = require('./routes/violations.routes');
 const reportsRoutes = require('./routes/reports.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const settingsRoutes = require('./routes/settings.routes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/violations', violationsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // مسار الجذر
 app.get('/', (req, res) => {

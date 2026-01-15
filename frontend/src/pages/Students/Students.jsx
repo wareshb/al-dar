@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, DatePicker, Switch, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
-import { getStudents, createStudent, updateStudent, deleteStudent } from '../../services/studentService';
+import { getStudents, createStudent, updateStudent, deleteStudent, getNextStudentId } from '../../services/studentService';
 import { getHalaqat } from '../../services/halaqaService';
 import { FilterOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -56,16 +56,31 @@ const Students = () => {
         }
     };
 
-    const showModal = (student = null) => {
+    const showModal = async (student = null) => {
         setEditingStudent(student);
         if (student) {
             form.setFieldsValue({
                 ...student,
                 birth_date: student.birth_date ? dayjs(student.birth_date) : null,
                 registration_date: student.registration_date ? dayjs(student.registration_date) : null,
+                // استخراج معرف الحلقة من البيانات إذا كان موجوداً
+                halaqa_id: student.halaqa_id || null
             });
         } else {
             form.resetFields();
+
+            // جلب المعرف التلقائي
+            try {
+                const idResult = await getNextStudentId();
+                if (idResult.success) {
+                    form.setFieldsValue({
+                        identification_number: idResult.nextId
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching next ID:', error);
+            }
+
             form.setFieldsValue({
                 registration_date: dayjs(),
                 is_active: true
@@ -319,6 +334,16 @@ const Students = () => {
                             valuePropName="checked"
                         >
                             <Switch checkedChildren="نشط" unCheckedChildren="غير نشط" />
+                        </Form.Item>
+                        <Form.Item
+                            name="halaqa_id"
+                            label="الحلقة"
+                        >
+                            <Select placeholder="اختر الحلقة">
+                                {halaqat.map(h => (
+                                    <Option key={h.id} value={h.id}>{h.name}</Option>
+                                ))}
+                            </Select>
                         </Form.Item>
                     </div>
 

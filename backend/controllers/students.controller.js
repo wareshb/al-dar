@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const dayjs = require('dayjs');
 
 // الحصول على جميع الطلاب مع إمكانية البحث والفلترة
 exports.getAllStudents = async (req, res) => {
@@ -9,7 +10,9 @@ exports.getAllStudents = async (req, res) => {
         let query = `SELECT s.*, 
       (SELECT h.name FROM halaqa_enrollments he 
        LEFT JOIN halaqat h ON he.halaqa_id = h.id 
-       WHERE he.student_id = s.id AND he.is_active = true LIMIT 1) as halaqa_name
+       WHERE he.student_id = s.id AND he.is_active = true LIMIT 1) as halaqa_name,
+      (SELECT he.halaqa_id FROM halaqa_enrollments he 
+       WHERE he.student_id = s.id AND he.is_active = true LIMIT 1) as halaqa_id
       FROM students s WHERE 1=1`;
 
         const params = [];
@@ -167,6 +170,43 @@ exports.getStudent = async (req, res) => {
     }
 };
 
+// الحصول على المعرف التالي للطالب
+exports.getNextId = async (req, res) => {
+    try {
+        const year = dayjs().year();
+        const prefix = year.toString();
+
+        const [rows] = await db.query(
+            `SELECT identification_number FROM students 
+             WHERE identification_number LIKE ? 
+             ORDER BY identification_number DESC LIMIT 1`,
+            [`${prefix}%`]
+        );
+
+        let nextNumber = 1;
+        if (rows.length > 0 && rows[0].identification_number) {
+            const lastId = rows[0].identification_number;
+            const lastNumber = parseInt(lastId.substring(4));
+            if (!isNaN(lastNumber)) {
+                nextNumber = lastNumber + 1;
+            }
+        }
+
+        const nextId = `${prefix}${nextNumber.toString().padStart(3, '0')}`;
+
+        res.json({
+            success: true,
+            nextId
+        });
+    } catch (error) {
+        console.error('Get next ID error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'حدث خطأ أثناء توليد المعرف التالي'
+        });
+    }
+};
+
 // إضافة طالب جديد
 exports.createStudent = async (req, res) => {
     try {
@@ -193,21 +233,24 @@ exports.createStudent = async (req, res) => {
 
         const [result] = await db.query(
             `INSERT INTO students (
-        identification_number, registration_date, full_name, birth_date, birth_place, permanent_address,
-        academic_level, hifz_amount, phone, photo_url,
+        identification_number, registration_date, full_name, gender, birth_date, birth_place, 
+        permanent_address, address, academic_level, hifz_amount, phone, is_active, photo_url,
         guardian_name, guardian_relationship, guardian_phone, guardian_job,
         recommender_name_1, recommender_job_1, recommender_name_2, recommender_job_2
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 identification_number || null,
                 registration_date,
                 full_name,
+                req.body.gender || 'male',
                 birth_date || null,
                 birth_place || null,
                 permanent_address || null,
+                req.body.address || null,
                 academic_level || null,
                 hifz_amount || null,
                 phone || null,
+                req.body.is_active !== undefined ? (req.body.is_active ? 1 : 0) : 1,
                 photo_url || null,
                 guardian_name || null,
                 guardian_relationship || null,
@@ -220,11 +263,22 @@ exports.createStudent = async (req, res) => {
             ]
         );
 
+        const student_id = result.insertId;
+
+        // إذا تم تزويد معرف الحلقة، قم بتسجيل الطالب فيها
+        if (req.body.halaqa_id) {
+            await db.query(
+                `INSERT INTO halaqa_enrollments (halaqa_id, student_id, enroll_date, is_active) 
+                 VALUES (?, ?, ?, 1)`,
+                [req.body.halaqa_id, student_id, registration_date]
+            );
+        }
+
         res.status(201).json({
             success: true,
             message: 'تم إضافة الطالب بنجاح',
             data: {
-                id: result.insertId,
+                id: student_id,
                 full_name
             }
         });
@@ -242,21 +296,41 @@ exports.createStudent = async (req, res) => {
 exports.updateStudent = async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const { halaqa_id, ...updateData } = req.body;
 
-        const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
-        const values = [...Object.values(updateData), id];
+        if (Object.keys(updateData).length > 0) {
+            const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
+            const values = [...Object.values(updateData), id];
 
-        const [result] = await db.query(
-            `UPDATE students SET ${fields} WHERE id = ?`,
-            values
-        );
+            const [result] = await db.query(
+                `UPDATE students SET ${fields} WHERE id = ?`,
+                values
+            );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'الطالب غير موجود'
-            });
+            if (result.affectedRows === 0 && !halaqa_id) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'الطالب غير موجود'
+                });
+            }
+        }
+
+        // تحديث الحلقة إذا تغيرت
+        if (halaqa_id !== undefined) {
+            // إيقاف التسجيل الحالي
+            await db.query(
+                `UPDATE halaqa_enrollments SET is_active = 0 WHERE student_id = ? AND is_active = 1`,
+                [id]
+            );
+
+            // إضافة تسجيل جديد إذا تم اختيار حلقة
+            if (halaqa_id) {
+                await db.query(
+                    `INSERT INTO halaqa_enrollments (halaqa_id, student_id, enroll_date, is_active) 
+                     VALUES (?, ?, CURDATE(), 1)`,
+                    [halaqa_id, id]
+                );
+            }
         }
 
         res.json({

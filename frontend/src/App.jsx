@@ -13,6 +13,7 @@ import StaffAttendance from './pages/StaffAttendance/StaffAttendance';
 import Memorization from './pages/Memorization/Memorization';
 import Violations from './pages/Violations/Violations';
 import Reports from './pages/Reports/Reports';
+import Settings from './pages/Settings/Settings';
 import MainLayout from './components/Layout/MainLayout';
 import PrivateRoute from './components/PrivateRoute';
 
@@ -135,6 +136,17 @@ function App() {
                 <PrivateRoute>
                   <MainLayout>
                     <Reports />
+                  </MainLayout>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute roles={['admin']}>
+                  <MainLayout>
+                    <Settings />
                   </MainLayout>
                 </PrivateRoute>
               }

@@ -9,13 +9,23 @@
     background: rgba(255, 255, 255, 0.1);
 }
 
+.desktop-sider {
+    overflow: auto;
+    height: 100vh;
+    position: fixed !important;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+}
+
 .site-header {
     background: #fff;
     padding: 0 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 900;
     width: 100%;
 }
 
@@ -51,10 +61,10 @@
 
 .main-content {
     margin: 16px;
-    padding: 16px;
+    padding: 24px;
     background: #fff;
     border-radius: 8px;
-    min-height: calc(100vh - 100px);
+    min-height: calc(100vh - 110px);
 }
 
 /* Ant Design Drawer RTL fixes */

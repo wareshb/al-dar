@@ -10,7 +10,8 @@ import {
     WarningOutlined,
     FileTextOutlined,
     LogoutOutlined,
-    MenuOutlined
+    MenuOutlined,
+    SettingOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './MainLayout.css';
@@ -80,7 +81,12 @@ const MainLayout = ({ children }) => {
             icon: <FileTextOutlined />,
             label: 'التقارير',
         },
-    ];
+        user.role === 'admin' && {
+            key: '/settings',
+            icon: <SettingOutlined />,
+            label: 'إعدادات النظام',
+        }
+    ].filter(Boolean);
 
     const menu = (
         <Menu
@@ -126,7 +132,11 @@ const MainLayout = ({ children }) => {
                 {menu}
             </Drawer>
 
-            <Layout>
+            <Layout style={{
+                marginRight: isMobile ? 0 : (collapsed ? 80 : 250),
+                transition: 'all 0.2s',
+                minHeight: '100vh'
+            }}>
                 <Header className="site-header">
                     <div className="header-content">
                         {isMobile && (

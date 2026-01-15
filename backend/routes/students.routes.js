@@ -10,6 +10,9 @@ router.use(authMiddleware);
 // الحصول على جميع الطلاب مع البحث والفلترة
 router.get('/', studentsController.getAllStudents);
 
+// الحصول على المعرف التالي (يجب أن يكون قبل :id)
+router.get('/next-id', studentsController.getNextId);
+
 // الحصول على طالب واحد مع كل التفاصيل
 router.get('/:id', studentsController.getStudent);
 

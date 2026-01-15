@@ -10,6 +10,11 @@ export const getStudentById = async (id) => {
     return response.data;
 };
 
+export const getNextStudentId = async () => {
+    const response = await api.get('/students/next-id');
+    return response.data;
+};
+
 export const createStudent = async (data) => {
     const response = await api.post('/students', data);
     return response.data;
