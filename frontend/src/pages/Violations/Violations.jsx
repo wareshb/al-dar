@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Input, message, Card, Select, DatePicker, Popconfirm } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, message, Card, Select, DatePicker, Popconfirm, App } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { getViolations, recordViolation, deleteViolation } from '../../services/violationService';
 import { getStudents } from '../../services/studentService';
@@ -13,6 +13,7 @@ const Violations = () => {
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
+    const { message: messageApi } = App.useApp();
 
     useEffect(() => {
         loadData();
@@ -30,7 +31,7 @@ const Violations = () => {
             if (studentsRes.success) setStudents(studentsRes.data);
 
         } catch (error) {
-            message.error('خطأ في تحميل البيانات');
+            messageApi.error('خطأ في تحميل البيانات');
         } finally {
             setLoading(false);
         }
@@ -51,12 +52,12 @@ const Violations = () => {
         try {
             const result = await recordViolation(data);
             if (result.success) {
-                message.success('تم تسجيل المخالفة بنجاح');
+                messageApi.success('تم تسجيل المخالفة بنجاح');
                 setIsModalVisible(false);
                 loadData();
             }
         } catch (error) {
-            message.error('خطأ في التسجيل');
+            messageApi.error('خطأ في التسجيل');
         }
     };
 
@@ -64,11 +65,11 @@ const Violations = () => {
         try {
             const result = await deleteViolation(id);
             if (result.success) {
-                message.success('تم حذف المخالفة');
+                messageApi.success('تم حذف المخالفة');
                 loadData();
             }
         } catch (error) {
-            message.error('خطأ في الحذف');
+            messageApi.error('خطأ في الحذف');
         }
     };
 

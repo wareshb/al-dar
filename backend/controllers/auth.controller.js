@@ -18,33 +18,40 @@ exports.login = async (req, res) => {
         console.log('--- Login Debug ---');
         console.log('Username provided:', username);
 
-        // البحث عن المستخدم
-        const [users] = await db.query(
+        // البحث عن المستخدم في جدول المشرفين (الأدمن)
+        let [users] = await db.query(
             `SELECT u.*, r.name as role_name 
-       FROM users u 
-       LEFT JOIN roles r ON u.role_id = r.id 
-       WHERE u.username = ?`,
+             FROM users u 
+             LEFT JOIN roles r ON u.role_id = r.id 
+             WHERE u.username = ?`,
             [username]
         );
 
-        console.log('Users found in DB:', users.length);
-        if (users.length > 0) {
-            console.log('User status is_active:', users[0].is_active);
+        let user = users[0];
+        let roleName = user ? user.role_name : null;
+        let teacherId = user ? user.teacher_id : null;
 
-            // Check if user is active manually to provide better error log
-            if (!users[0].is_active) {
-                console.log('User is NOT active');
+        // إذا لم يتم العثور على المستخدم في جدول المشرفين، ابحث في جدول المعلمين
+        if (!user) {
+            console.log('User not found in users table, checking teachers table...');
+            const [teachers] = await db.query(
+                'SELECT * FROM teachers WHERE username = ? AND is_active = 1',
+                [username]
+            );
+
+            if (teachers.length > 0) {
+                user = teachers[0];
+                roleName = 'teacher'; // دور افتراضي للمعلم
+                teacherId = user.id;
             }
         }
 
-        if (users.length === 0) {
+        if (!user) {
             return res.status(401).json({
                 success: false,
                 message: 'اسم المستخدم أو كلمة المرور غير صحيحة'
             });
         }
-
-        const user = users[0];
 
         // التحقق من كلمة المرور
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -63,9 +70,9 @@ exports.login = async (req, res) => {
             {
                 id: user.id,
                 username: user.username,
-                role_id: user.role_id,
-                role_name: user.role_name,
-                teacher_id: user.teacher_id
+                role_id: user.role_id || null, // قد يكون null للمعلم إذا لم نستخدم جدول الأدوار له
+                role_name: roleName,
+                teacher_id: teacherId
             },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRE }
@@ -82,8 +89,8 @@ exports.login = async (req, res) => {
                     username: user.username,
                     full_name: user.full_name,
                     email: user.email,
-                    role: user.role_name,
-                    teacher_id: user.teacher_id
+                    role: roleName,
+                    teacher_id: teacherId
                 }
             }
         });

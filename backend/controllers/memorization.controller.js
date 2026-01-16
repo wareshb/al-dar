@@ -98,21 +98,31 @@ exports.getMemorizationByMonth = async (req, res) => {
             });
         }
 
-        const [memorization] = await db.query(
-            `SELECT m.*, 
-        s.full_name as student_name,
-        s1.name as start_surah_name, 
-        s2.name as end_surah_name,
-        t.full_name as reviewer_name
-       FROM memorization m
-       LEFT JOIN students s ON m.student_id = s.id
-       LEFT JOIN surahs s1 ON m.start_surah_id = s1.id
-       LEFT JOIN surahs s2 ON m.end_surah_id = s2.id
-       LEFT JOIN teachers t ON m.reviewed_by = t.id
-       WHERE m.month = ? AND m.year = ?
-       ORDER BY s.full_name ASC`,
-            [month, year]
-        );
+        let query = `SELECT m.*, 
+                    s.full_name as student_name,
+                    s1.name as start_surah_name, 
+                    s2.name as end_surah_name,
+                    t.full_name as reviewer_name
+                    FROM memorization m
+                    LEFT JOIN students s ON m.student_id = s.id
+                    LEFT JOIN surahs s1 ON m.start_surah_id = s1.id
+                    LEFT JOIN surahs s2 ON m.end_surah_id = s2.id
+                    LEFT JOIN teachers t ON m.reviewed_by = t.id
+                    WHERE m.month = ? AND m.year = ?`;
+        const params = [month, year];
+
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` AND EXISTS (
+                SELECT 1 FROM halaqa_enrollments he 
+                JOIN halaqat h ON he.halaqa_id = h.id 
+                WHERE he.student_id = m.student_id AND h.teacher_id = ? AND he.is_active = true
+            )`;
+            params.push(req.user.teacher_id);
+        }
+
+        query += ` ORDER BY s.full_name ASC`;
+
+        const [memorization] = await db.query(query, params);
 
         res.json({
             success: true,
@@ -208,6 +218,17 @@ exports.deleteMemorization = async (req, res) => {
 exports.getHalaqaStudentsWithProgress = async (req, res) => {
     try {
         const { halaqaId } = req.params;
+
+        // إذا كان المستخدم معلماً، تحقق من ملكيته للحلقة
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            const [halaqa] = await db.query('SELECT id FROM halaqat WHERE id = ? AND teacher_id = ?', [halaqaId, req.user.teacher_id]);
+            if (halaqa.length === 0) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'غير مصرح لك بالوصول لبيانات هذه الحلقة'
+                });
+            }
+        }
 
         // الحصول على جميع الطلاب في الحلقة
         const [students] = await db.query(

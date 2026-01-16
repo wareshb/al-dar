@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntdApp } from 'antd';
 import arEG from 'antd/locale/ar_EG';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login/Login';
@@ -35,128 +35,130 @@ function App() {
         },
       }}
     >
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* مسار تسجيل الدخول */}
-            <Route path="/login" element={<LoginWrapper />} />
+      <AntdApp>
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              {/* مسار تسجيل الدخول */}
+              <Route path="/login" element={<LoginWrapper />} />
 
-            {/* المسارات المحمية */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              {/* المسارات المحمية */}
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Dashboard />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/teachers"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Teachers />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/teachers"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Teachers />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/students"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Students />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/students"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Students />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/halaqat"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Halaqat />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/halaqat"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Halaqat />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/attendance"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Attendance />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/attendance"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Attendance />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/staff-attendance"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <StaffAttendance />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/staff-attendance"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <StaffAttendance />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/memorization"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Memorization />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/memorization"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Memorization />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/violations"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Violations />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/violations"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Violations />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/reports"
-              element={
-                <PrivateRoute>
-                  <MainLayout>
-                    <Reports />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/reports"
+                element={
+                  <PrivateRoute>
+                    <MainLayout>
+                      <Reports />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            <Route
-              path="/settings"
-              element={
-                <PrivateRoute roles={['admin']}>
-                  <MainLayout>
-                    <Settings />
-                  </MainLayout>
-                </PrivateRoute>
-              }
-            />
+              <Route
+                path="/settings"
+                element={
+                  <PrivateRoute roles={['admin']}>
+                    <MainLayout>
+                      <Settings />
+                    </MainLayout>
+                  </PrivateRoute>
+                }
+              />
 
-            {/* إعادة توجيه لأي مسار غير موجود */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+              {/* إعادة توجيه لأي مسار غير موجود */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </AntdApp>
     </ConfigProvider>
   );
 }

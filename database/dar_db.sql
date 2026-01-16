@@ -457,6 +457,8 @@ INSERT INTO `surahs` (`id`, `name`, `order_no`, `ayah_count`) VALUES
 CREATE TABLE `teachers` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `full_name` varchar(150) NOT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `birth_date` date DEFAULT NULL,
   `birth_place` varchar(120) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
@@ -617,6 +619,7 @@ ALTER TABLE `surahs`
 --
 ALTER TABLE `teachers`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`),
   ADD KEY `idx_teacher_name` (`full_name`);
 
 --

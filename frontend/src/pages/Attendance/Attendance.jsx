@@ -1,27 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Table, 
-    Button, 
-    Space, 
-    Card, 
-    Select, 
-    DatePicker, 
-    message, 
-    Radio, 
-    Tag, 
-    Statistic, 
-    Row, 
+import {
+    Table,
+    Button,
+    Space,
+    Card,
+    Select,
+    DatePicker,
+    message,
+    Radio,
+    Tag,
+    Statistic,
+    Row,
     Col,
     Input,
     TimePicker,
     Tooltip,
     Badge,
     Typography,
-    Divider
+    Divider,
+    App
 } from 'antd';
-import { 
-    SaveOutlined, 
-    ReloadOutlined, 
+import {
+    SaveOutlined,
+    ReloadOutlined,
     CheckCircleOutlined,
     CloseCircleOutlined,
     ClockCircleOutlined,
@@ -52,6 +53,7 @@ const Attendance = () => {
         excused: 0
     });
     const [expandedRows, setExpandedRows] = useState({});
+    const { message: messageApi } = App.useApp();
 
     useEffect(() => {
         loadHalaqat();
@@ -70,7 +72,7 @@ const Attendance = () => {
                 setHalaqat(result.data);
             }
         } catch (error) {
-            message.error('خطأ في تحميل الحلقات');
+            messageApi.error('خطأ في تحميل الحلقات');
         }
     };
 
@@ -87,7 +89,7 @@ const Attendance = () => {
 
     const loadAttendance = async () => {
         if (!selectedHalaqa) {
-            message.warning('يرجى اختيار حلقة أولاً');
+            messageApi.warning('يرجى اختيار حلقة أولاً');
             return;
         }
 
@@ -105,7 +107,7 @@ const Attendance = () => {
                 });
             }
         } catch (error) {
-            message.error('خطأ في تحميل كشف الحضور');
+            messageApi.error('خطأ في تحميل كشف الحضور');
         } finally {
             setLoading(false);
         }
@@ -128,7 +130,7 @@ const Attendance = () => {
 
     const handleTimeChange = (studentId, field, time) => {
         setStudents(prev => prev.map(s =>
-            s.student_id === studentId 
+            s.student_id === studentId
                 ? { ...s, [field]: time ? time.format('HH:mm:ss') : null }
                 : s
         ));
@@ -157,7 +159,7 @@ const Attendance = () => {
 
     const handleSave = async () => {
         if (students.length === 0) {
-            message.warning('لا يوجد طلاب لحفظ الحضور');
+            messageApi.warning('لا يوجد طلاب لحفظ الحضور');
             return;
         }
 
@@ -178,11 +180,11 @@ const Attendance = () => {
             });
 
             if (result.success) {
-                message.success('تم حفظ الحضور بنجاح');
+                messageApi.success('تم حفظ الحضور بنجاح');
                 loadAttendance();
             }
         } catch (error) {
-            message.error(error.response?.data?.message || 'خطأ في حفظ الحضور');
+            messageApi.error(error.response?.data?.message || 'خطأ في حفظ الحضور');
         } finally {
             setSaving(false);
         }
@@ -356,8 +358,8 @@ const Attendance = () => {
 
                 {/* معلومات الحلقة */}
                 {halaqaInfo && (
-                    <Card 
-                        size="small" 
+                    <Card
+                        size="small"
                         style={{ marginBottom: 24, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}
                     >
                         <Row gutter={16}>

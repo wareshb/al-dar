@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, DatePicker, Switch, Tag } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, DatePicker, Switch, Tag, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { getStudents, createStudent, updateStudent, deleteStudent, getNextStudentId } from '../../services/studentService';
 import { getHalaqat } from '../../services/halaqaService';
@@ -15,6 +15,7 @@ const Students = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingStudent, setEditingStudent] = useState(null);
     const [form] = Form.useForm();
+    const { message: messageApi, notification: notificationApi } = App.useApp();
 
     // Filter states
     const [searchText, setSearchText] = useState('');
@@ -50,7 +51,7 @@ const Students = () => {
                 setStudents(result.data);
             }
         } catch (error) {
-            message.error('خطأ في تحميل بيانات الطلاب');
+            messageApi.error('خطأ في تحميل بيانات الطلاب');
         } finally {
             setLoading(false);
         }
@@ -105,18 +106,22 @@ const Students = () => {
             if (editingStudent) {
                 const result = await updateStudent(editingStudent.id, data);
                 if (result.success) {
-                    message.success('تم تحديث بيانات الطالب بنجاح');
+                    messageApi.success('تم تحديث بيانات الطالب بنجاح');
                 }
             } else {
                 const result = await createStudent(data);
                 if (result.success) {
-                    message.success('تم إضافة الطالب بنجاح');
+                    messageApi.success('تم إضافة الطالب بنجاح');
                 }
             }
             setIsModalVisible(false);
             loadStudents();
         } catch (error) {
-            message.error(error.response?.data?.message || 'حدث خطأ ما');
+            notificationApi.error({
+                message: 'فشل في العملية',
+                description: error.response?.data?.message || 'اسم المستخدم أو البيانات المدخلة قد تكون غير صحيحة',
+                duration: 5
+            });
         }
     };
 
@@ -124,11 +129,11 @@ const Students = () => {
         try {
             const result = await deleteStudent(id);
             if (result.success) {
-                message.success('تم حذف الطالب بنجاح');
+                messageApi.success('تم حذف الطالب بنجاح');
                 loadStudents();
             }
         } catch (error) {
-            message.error('خطأ في عملية الحذف');
+            messageApi.error('خطأ في عملية الحذف');
         }
     };
 

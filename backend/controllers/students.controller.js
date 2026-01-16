@@ -17,6 +17,16 @@ exports.getAllStudents = async (req, res) => {
 
         const params = [];
 
+        // إذا كان المستخدم معلماً، أظهر فقط طلاب حلقاته
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` AND EXISTS (
+                SELECT 1 FROM halaqa_enrollments he2 
+                JOIN halaqat h2 ON he2.halaqa_id = h2.id 
+                WHERE he2.student_id = s.id AND h2.teacher_id = ? AND he2.is_active = true
+            )`;
+            params.push(req.user.teacher_id);
+        }
+
         // البحث بالاسم
         if (search) {
             query += ` AND s.full_name LIKE ?`;
@@ -49,6 +59,16 @@ exports.getAllStudents = async (req, res) => {
         // عدد الطلاب الكلي
         let countQuery = `SELECT COUNT(*) as total FROM students s WHERE 1=1`;
         const countParams = [];
+
+        // إذا كان المستخدم معلماً، أظهر فقط عدد طلاب حلقاته
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            countQuery += ` AND EXISTS (
+                SELECT 1 FROM halaqa_enrollments he2 
+                JOIN halaqat h2 ON he2.halaqa_id = h2.id 
+                WHERE he2.student_id = s.id AND h2.teacher_id = ? AND he2.is_active = true
+            )`;
+            countParams.push(req.user.teacher_id);
+        }
 
         if (search) {
             countQuery += ` AND s.full_name LIKE ?`;

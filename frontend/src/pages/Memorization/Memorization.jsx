@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Input, message, Card, Select, Rate, DatePicker, Row, Col, Tag } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, message, Card, Select, Rate, DatePicker, Row, Col, Tag, App } from 'antd';
 import { PlusOutlined, HistoryOutlined } from '@ant-design/icons';
 import { getHalaqat } from '../../services/halaqaService';
 import { recordMemorization, getStudentProgress, getSurahs, getHalaqaProgress } from '../../services/memorizationService';
@@ -18,6 +18,7 @@ const Memorization = () => {
     const [historyData, setHistoryData] = useState([]);
     const [currentStudent, setCurrentStudent] = useState(null);
     const [form] = Form.useForm();
+    const { message: messageApi } = App.useApp();
 
     useEffect(() => {
         loadHalaqat();
@@ -38,7 +39,7 @@ const Memorization = () => {
             const result = await getHalaqat();
             if (result.success) setHalaqat(result.data);
         } catch (error) {
-            message.error('خطأ في تحميل الحلقات');
+            messageApi.error('خطأ في تحميل الحلقات');
         }
     };
 
@@ -48,7 +49,7 @@ const Memorization = () => {
             const result = await getHalaqaProgress(halaqaId);
             if (result.success) setStudents(result.data);
         } catch (error) {
-            message.error('خطأ في تحميل الطلاب');
+            messageApi.error('خطأ في تحميل الطلاب');
         } finally {
             setLoading(false);
         }
@@ -83,7 +84,7 @@ const Memorization = () => {
                 setIsHistoryVisible(true);
             }
         } catch (error) {
-            message.error('خطأ في جلب السجل');
+            messageApi.error('خطأ في جلب السجل');
         } finally {
             setLoading(false);
         }
@@ -108,12 +109,12 @@ const Memorization = () => {
         try {
             const result = await recordMemorization(data);
             if (result.success) {
-                message.success('تم تسجيل الإنجاز بنجاح');
+                messageApi.success('تم تسجيل الإنجاز بنجاح');
                 setIsModalVisible(false);
                 loadStudents(selectedHalaqa);
             }
         } catch (error) {
-            message.error('خطأ في التسجيل');
+            messageApi.error('خطأ في التسجيل');
         }
     };
 

@@ -41,7 +41,7 @@ const MainLayout = ({ children }) => {
             icon: <DashboardOutlined />,
             label: 'لوحة التحكم',
         },
-        {
+        user.role === 'admin' && {
             key: '/teachers',
             icon: <TeamOutlined />,
             label: 'الموظفين والمعلمون',
@@ -61,7 +61,7 @@ const MainLayout = ({ children }) => {
             icon: <CheckSquareOutlined />,
             label: 'حضور الطلاب',
         },
-        {
+        user.role === 'admin' && {
             key: '/staff-attendance',
             icon: <TeamOutlined />,
             label: 'حضور المعلمين',

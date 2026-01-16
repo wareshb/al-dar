@@ -67,15 +67,25 @@ exports.getAttendanceByDate = async (req, res) => {
     try {
         const { date } = req.params;
 
-        const [attendance] = await db.query(
-            `SELECT a.*, s.full_name as student_name, t.full_name as teacher_name
-       FROM attendances a
-       LEFT JOIN students s ON a.student_id = s.id
-       LEFT JOIN teachers t ON a.teacher_id = t.id
-       WHERE a.attendance_date = ?
-       ORDER BY s.full_name ASC`,
-            [date]
-        );
+        let query = `SELECT a.*, s.full_name as student_name, t.full_name as teacher_name
+                    FROM attendances a
+                    LEFT JOIN students s ON a.student_id = s.id
+                    LEFT JOIN teachers t ON a.teacher_id = t.id
+                    WHERE a.attendance_date = ?`;
+        const params = [date];
+
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` AND EXISTS (
+                SELECT 1 FROM halaqa_enrollments he 
+                JOIN halaqat h ON he.halaqa_id = h.id 
+                WHERE he.student_id = a.student_id AND h.teacher_id = ? AND he.is_active = true
+            )`;
+            params.push(req.user.teacher_id);
+        }
+
+        query += ` ORDER BY s.full_name ASC`;
+
+        const [attendance] = await db.query(query, params);
 
         res.json({
             success: true,
@@ -146,6 +156,15 @@ exports.getAbsentReport = async (req, res) => {
 
         const params = [];
 
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` AND EXISTS (
+                SELECT 1 FROM halaqa_enrollments he 
+                JOIN halaqat h ON he.halaqa_id = h.id 
+                WHERE he.student_id = a.student_id AND h.teacher_id = ? AND he.is_active = true
+            )`;
+            params.push(req.user.teacher_id);
+        }
+
         if (start_date && end_date) {
             query += ` AND a.attendance_date BETWEEN ? AND ?`;
             params.push(start_date, end_date);
@@ -195,6 +214,17 @@ exports.getHalaqaAttendance = async (req, res) => {
        ORDER BY s.full_name ASC`,
             [halaqaId]
         );
+
+        // إذا كان المستخدم معلماً، تحقق من ملكيته للحلقة
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            const [halaqa] = await db.query('SELECT id FROM halaqat WHERE id = ? AND teacher_id = ?', [halaqaId, req.user.teacher_id]);
+            if (halaqa.length === 0) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'غير مصرح لك بالوصول لبيانات هذه الحلقة'
+                });
+            }
+        }
 
         // الحصول على سجلات الحضور الموجودة لهذا التاريخ
         const [existingAttendance] = await db.query(

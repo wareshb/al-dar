@@ -13,6 +13,15 @@ exports.getAllViolations = async (req, res) => {
     `;
         const params = [];
 
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` AND EXISTS (
+                SELECT 1 FROM halaqa_enrollments he 
+                JOIN halaqat h ON he.halaqa_id = h.id 
+                WHERE he.student_id = v.student_id AND h.teacher_id = ? AND he.is_active = true
+            )`;
+            params.push(req.user.teacher_id);
+        }
+
         if (student_id) {
             query += ` AND v.student_id = ?`;
             params.push(student_id);

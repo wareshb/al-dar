@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import {
+    PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined,
+    CloseCircleOutlined, EyeOutlined, UserOutlined, PhoneOutlined,
+    MailOutlined, LockOutlined, IdcardOutlined, EnvironmentOutlined,
+    GlobalOutlined, SafetyCertificateOutlined, HomeOutlined, BookOutlined
+} from '@ant-design/icons';
 import { getTeachers, createTeacher, updateTeacher, deleteTeacher } from '../../services/teacherService';
-import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, Tag, Switch } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, Tag, Switch, Row, Col, Divider, Typography, App } from 'antd';
 
 const { Option } = Select;
+const { Text, Title } = Typography;
 
 const Teachers = () => {
     const [teachers, setTeachers] = useState([]);
@@ -13,6 +19,7 @@ const Teachers = () => {
     const [editingTeacher, setEditingTeacher] = useState(null);
     const [selectedTeacher, setSelectedTeacher] = useState(null);
     const [form] = Form.useForm();
+    const { message: messageApi, notification: notificationApi } = App.useApp();
 
     useEffect(() => {
         loadTeachers();
@@ -26,7 +33,7 @@ const Teachers = () => {
                 setTeachers(result.data);
             }
         } catch (error) {
-            message.error('خطأ في تحميل بيانات المعلمين والموظفين');
+            messageApi.error('خطأ في تحميل بيانات المعلمين والموظفين');
         } finally {
             setLoading(false);
         }
@@ -57,18 +64,23 @@ const Teachers = () => {
             if (editingTeacher) {
                 const result = await updateTeacher(editingTeacher.id, values);
                 if (result.success) {
-                    message.success('تم تحديث بيانات الموظف بنجاح');
+                    messageApi.success('تم تحديث بيانات الموظف بنجاح');
                 }
             } else {
                 const result = await createTeacher(values);
                 if (result.success) {
-                    message.success('تم إضافة الموظف بنجاح');
+                    messageApi.success('تم إضافة الموظف بنجاح');
                 }
             }
             setIsModalVisible(false);
             loadTeachers();
         } catch (error) {
-            message.error(error.response?.data?.message || 'حدث خطأ ما');
+            const errorMsg = error.response?.data?.message || 'حدث خطأ ما';
+            notificationApi.error({
+                message: 'فشل في العملية',
+                description: errorMsg,
+                duration: 5
+            });
         }
     };
 
@@ -76,11 +88,11 @@ const Teachers = () => {
         try {
             const result = await deleteTeacher(id);
             if (result.success) {
-                message.success('تم حذف الموظف بنجاح');
+                messageApi.success('تم حذف الموظف بنجاح');
                 loadTeachers();
             }
         } catch (error) {
-            message.error('خطأ في عملية الحذف');
+            messageApi.error('خطأ في عملية الحذف');
         }
     };
 
@@ -173,143 +185,245 @@ const Teachers = () => {
             />
 
             <Modal
-                title={editingTeacher ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
+                title={
+                    <Title level={4} style={{ margin: 0 }}>
+                        {editingTeacher ? <EditOutlined /> : <PlusOutlined />}
+                        <span style={{ marginRight: 8 }}>
+                            {editingTeacher ? 'تعديل بيانات الموظف' : 'إضافة موظف جديد'}
+                        </span>
+                    </Title>
+                }
                 open={isModalVisible}
                 onCancel={handleCancel}
                 footer={null}
-                width={700}
+                width={800}
+                style={{ top: 20 }}
             >
                 <Form
                     form={form}
                     layout="vertical"
                     onFinish={onFinish}
                     initialValues={{ staff_type: 'teacher', is_mujaz: false, is_active: true }}
+                    requiredMark="optional"
                 >
-                    <Space style={{ display: 'flex', width: '100%' }} align="start">
-                        <Form.Item
-                            name="full_name"
-                            label="الاسم الكامل"
-                            rules={[{ required: true, message: 'يرجى إدخال الاسم الكامل' }]}
-                            style={{ width: 320 }}
-                        >
-                            <Input />
-                        </Form.Item>
-                        <Form.Item
-                            name="phone"
-                            label="رقم الهاتف"
-                            rules={[{ required: true, message: 'يرجى إدخال رقم الهاتف' }]}
-                            style={{ width: 320 }}
-                        >
-                            <Input />
-                        </Form.Item>
-                    </Space>
+                    <Divider orientation="right" plain>
+                        <Text type="secondary"><UserOutlined /> المعلومات الشخصية</Text>
+                    </Divider>
 
-                    <Space style={{ display: 'flex', width: '100%' }} align="start">
-                        <Form.Item
-                            name="email"
-                            label="البريد الإلكتروني"
-                            style={{ width: 320 }}
-                        >
-                            <Input type="email" />
-                        </Form.Item>
-                        <Form.Item
-                            name="staff_type"
-                            label="نوع الموظف"
-                            rules={[{ required: true }]}
-                            style={{ width: 320 }}
-                        >
-                            <Select>
-                                <Option value="teacher">معلم</Option>
-                                <Option value="admin">إداري</Option>
-                                <Option value="both">معلم وإداري</Option>
-                            </Select>
-                        </Form.Item>
-                    </Space>
+                    <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="full_name"
+                                label="الاسم الكامل"
+                                rules={[{ required: true, message: 'يرجى إدخال الاسم الكامل' }]}
+                            >
+                                <Input prefix={<UserOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="أدخل الاسم الرباعي" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="phone"
+                                label="رقم الهاتف"
+                                rules={[{ required: true, message: 'يرجى إدخال رقم الهاتف' }]}
+                            >
+                                <Input prefix={<PhoneOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="7xxxxxxx" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                    <Space style={{ display: 'flex', width: '100%' }} align="start">
-                        <Form.Item
-                            name="current_job"
-                            label="الوظيفة الحالية"
-                            style={{ width: 320 }}
-                        >
-                            <Input placeholder="مثال: مدرس قرآن، مدير حلقة..." />
-                        </Form.Item>
-                        <Form.Item
-                            name="qualification"
-                            label="المؤهل العلمي"
-                            style={{ width: 320 }}
-                        >
-                            <Input placeholder="مثال: بكالوريوس دراسات إسلامية" />
-                        </Form.Item>
-                    </Space>
+                    <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="email"
+                                label="البريد الإلكتروني"
+                                rules={[{ type: 'email', message: 'البريد الإلكتروني غير صالح' }]}
+                            >
+                                <Input prefix={<MailOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="example@mail.com" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="staff_type"
+                                label="نوع الموظف"
+                                rules={[{ required: true }]}
+                            >
+                                <Select>
+                                    <Option value="teacher">معلم</Option>
+                                    <Option value="admin">إداري</Option>
+                                    <Option value="both">معلم وإداري</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                    <Space style={{ display: 'flex', width: '100%' }} align="start">
-                        <Form.Item
-                            name="specialization"
-                            label="التخصص"
-                            style={{ width: 320 }}
-                        >
-                            <Input />
-                        </Form.Item>
-                        <Form.Item
-                            name="is_mujaz"
-                            label="هل هو مجاز؟"
-                            valuePropName="checked"
-                            style={{ width: 320 }}
-                        >
-                            <Switch checkedChildren="نعم" unCheckedChildren="لا" />
-                        </Form.Item>
-                    </Space>
+                    <Row gutter={16}>
+                        <Col span={24}>
+                            <Form.Item
+                                name="address"
+                                label="العنوان السكني"
+                            >
+                                <Input.TextArea placeholder="المحافظة - المديرية - المنطقة" rows={2} />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                    <Form.Item
-                        name="address"
-                        label="العنوان"
-                    >
-                        <Input.TextArea rows={2} />
-                    </Form.Item>
+                    <Divider orientation="right" plain>
+                        <Text type="secondary"><BookOutlined /> المعلومات الوظيفية</Text>
+                    </Divider>
 
-                    <Form.Item
-                        name="is_active"
-                        label="الحالة"
-                        valuePropName="checked"
-                    >
-                        <Switch checkedChildren="نشط" unCheckedChildren="غير نشط" />
-                    </Form.Item>
+                    <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="current_job"
+                                label="الوظيفة الحالية"
+                            >
+                                <Input prefix={<IdcardOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="مثل: مدرس قرآن، مدير حلقة..." />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="qualification"
+                                label="المؤهل العلمي"
+                            >
+                                <Input prefix={<SafetyCertificateOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="بكالوريوس، ماجستير..." />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" block>
-                            {editingTeacher ? 'تحديث البيانات' : 'إضافة الموظف'}
+                    <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="specialization"
+                                label="التخصص"
+                            >
+                                <Input prefix={<GlobalOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="دراسيات إسلامية، لغة عربية..." />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={12} sm={6}>
+                            <Form.Item
+                                name="is_mujaz"
+                                label="هل هو مجاز؟"
+                                valuePropName="checked"
+                            >
+                                <Switch checkedChildren="نعم" unCheckedChildren="لا" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={12} sm={6}>
+                            <Form.Item
+                                name="is_active"
+                                label="الحالة"
+                                valuePropName="checked"
+                            >
+                                <Switch checkedChildren="نشط" unCheckedChildren="غير نشط" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Divider orientation="right" plain>
+                        <Text type="secondary"><LockOutlined /> بيانات الحساب (لتسجيل الدخول)</Text>
+                    </Divider>
+
+                    <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="username"
+                                label="اسم المستخدم"
+                                rules={[{ required: !editingTeacher, message: 'يرجى إدخال اسم المستخدم' }]}
+                            >
+                                <Input prefix={<UserOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="username" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item
+                                name="password"
+                                label={editingTeacher ? "كلمة المرور (اتركها فارغة لعدم التغيير)" : "كلمة المرور"}
+                                rules={[{ required: !editingTeacher, message: 'يرجى إدخال كلمة المرور' }]}
+                            >
+                                <Input.Password prefix={<LockOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="********" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
+                        <Button type="primary" htmlType="submit" block size="large" icon={editingTeacher ? <EditOutlined /> : <PlusOutlined />}>
+                            {editingTeacher ? 'تحديث بيانات الموظف' : 'إضافة الموظف الجديد'}
                         </Button>
                     </Form.Item>
                 </Form>
             </Modal>
 
             <Modal
-                title="تفاصيل الموظف"
+                title={
+                    <Title level={4} style={{ margin: 0 }}>
+                        <EyeOutlined /> <span style={{ marginRight: 8 }}>تفاصيل الموظف</span>
+                    </Title>
+                }
                 open={isDetailsVisible}
                 onCancel={() => setIsDetailsVisible(false)}
                 footer={[
-                    <Button key="close" onClick={() => setIsDetailsVisible(false)}>
+                    <Button key="close" type="primary" onClick={() => setIsDetailsVisible(false)}>
                         إغلاق
                     </Button>
                 ]}
-                width={600}
+                width={700}
             >
                 {selectedTeacher && (
                     <div className="staff-details">
-                        <p><strong>الاسم الكامل:</strong> {selectedTeacher.full_name}</p>
-                        <p><strong>رقم الهاتف:</strong> {selectedTeacher.phone}</p>
-                        <p><strong>البريد الإلكتروني:</strong> {selectedTeacher.email || 'غير متوفر'}</p>
-                        <p><strong>نوع الموظف:</strong> {
-                            selectedTeacher.staff_type === 'teacher' ? 'معلم' :
-                                selectedTeacher.staff_type === 'admin' ? 'إداري' : 'معلم وإداري'
-                        }</p>
-                        <p><strong>الوظيفة الحالية:</strong> {selectedTeacher.current_job || '-'}</p>
-                        <p><strong>المؤهل العلمي:</strong> {selectedTeacher.qualification || '-'}</p>
-                        <p><strong>التخصص:</strong> {selectedTeacher.specialization || '-'}</p>
-                        <p><strong>مجاز؟:</strong> {selectedTeacher.is_mujaz ? 'نعم' : 'لا'}</p>
-                        <p><strong>العنوان:</strong> {selectedTeacher.address || '-'}</p>
-                        <p><strong>الحالة:</strong> {selectedTeacher.is_active ? 'نشط' : 'غير نشط'}</p>
+                        <Row gutter={[16, 24]}>
+                            <Col span={12}>
+                                <Text type="secondary"><UserOutlined /> الاسم الكامل:</Text>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{selectedTeacher.full_name}</div>
+                            </Col>
+                            <Col span={12}>
+                                <Text type="secondary"><PhoneOutlined /> رقم الهاتف:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.phone}</div>
+                            </Col>
+
+                            <Col span={12}>
+                                <Text type="secondary"><MailOutlined /> البريد الإلكتروني:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.email || 'غير متوفر'}</div>
+                            </Col>
+                            <Col span={12}>
+                                <Text type="secondary"><UserOutlined /> اسم المستخدم:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.username || '-'}</div>
+                            </Col>
+
+                            <Col span={12}>
+                                <Text type="secondary"><IdcardOutlined /> نوع الموظف:</Text>
+                                <div>
+                                    {selectedTeacher.staff_type === 'teacher' ? <Tag color="blue">معلم</Tag> :
+                                        selectedTeacher.staff_type === 'admin' ? <Tag color="orange">إداري</Tag> :
+                                            <Tag color="purple">معلم وإداري</Tag>}
+                                </div>
+                            </Col>
+                            <Col span={12}>
+                                <Text type="secondary"><BookOutlined /> الوظيفة الحالية:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.current_job || '-'}</div>
+                            </Col>
+
+                            <Col span={12}>
+                                <Text type="secondary"><SafetyCertificateOutlined /> المؤهل العلمي:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.qualification || '-'}</div>
+                            </Col>
+                            <Col span={12}>
+                                <Text type="secondary"><GlobalOutlined /> التخصص:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.specialization || '-'}</div>
+                            </Col>
+
+                            <Col span={12}>
+                                <Text type="secondary">مجاز؟:</Text>
+                                <div>{selectedTeacher.is_mujaz ? <Tag color="success">نعم</Tag> : <Tag>لا</Tag>}</div>
+                            </Col>
+                            <Col span={12}>
+                                <Text type="secondary">الحالة:</Text>
+                                <div>{selectedTeacher.is_active ? <Tag color="processing">نشط</Tag> : <Tag color="error">غير نشط</Tag>}</div>
+                            </Col>
+
+                            <Col span={24}>
+                                <Text type="secondary"><EnvironmentOutlined /> العنوان:</Text>
+                                <div style={{ fontSize: '16px' }}>{selectedTeacher.address || '-'}</div>
+                            </Col>
+                        </Row>
                     </div>
                 )}
             </Modal>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Card, Select, notification, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserAddOutlined, TeamOutlined } from '@ant-design/icons';
-import { getHalaqat, createHalaqa, updateHalaqa, deleteHalaqa, enrollStudent, getHalaqaById, removeStudent } from '../../services/halaqaService';
+import { getHalaqat, createHalaqa, updateHalaqa, deleteHalaqa, enrollStudents, getHalaqaById, removeStudent } from '../../services/halaqaService';
 import { getTeachers } from '../../services/teacherService';
 import { getStudents } from '../../services/studentService';
 
@@ -20,6 +20,7 @@ const Halaqat = () => {
     const [currentHalaqaStudents, setCurrentHalaqaStudents] = useState([]);
     const [form] = Form.useForm();
     const [enrollForm] = Form.useForm();
+    const { message: messageApi, notification: notificationApi, modal: modalApi } = App.useApp();
 
     useEffect(() => {
         loadData();
@@ -39,7 +40,7 @@ const Halaqat = () => {
             if (studentsRes.success) setStudents(studentsRes.data);
 
         } catch (error) {
-            message.error('خطأ في تحميل البيانات');
+            messageApi.error('خطأ في تحميل البيانات');
         } finally {
             setLoading(false);
         }
@@ -68,14 +69,24 @@ const Halaqat = () => {
 
     const handleEnroll = async (values) => {
         try {
-            const result = await enrollStudent(selectedHalaqa.id, values.studentId);
+            const result = await enrollStudents(selectedHalaqa.id, values.studentIds);
             if (result.success) {
-                message.success('تم إضافة الطالب إلى الحلقة بنجاح');
+                messageApi.success('تم إضافة الطلاب إلى الحلقة بنجاح');
                 setIsEnrollModalVisible(false);
                 loadData(); // لتحديث عدد الطلاب في الجدول الرئيسي
             }
         } catch (error) {
-            message.error(error.response?.data?.message || 'حدث خطأ أثناء إضافة الطالب');
+            console.error('Enroll Error Detail:', error);
+            console.error('Enroll Error Response Data:', error.response?.data);
+
+            const errorMessage = error.response?.data?.message || error.message || 'حدث خطأ غير متوقع أثناء إضافة الطلاب';
+
+            notificationApi.error({
+                message: 'فشل في إضافة الطلاب',
+                description: errorMessage,
+                duration: 10,
+                placement: 'topRight'
+            });
         }
     };
 
@@ -88,7 +99,7 @@ const Halaqat = () => {
                 setIsStudentsListVisible(true);
             }
         } catch (error) {
-            message.error('خطأ في تحميل قائمة الطلاب');
+            messageApi.error('خطأ في تحميل قائمة الطلاب');
         }
     };
 
@@ -96,14 +107,14 @@ const Halaqat = () => {
         try {
             const result = await removeStudent(selectedHalaqa.id, studentId);
             if (result.success) {
-                message.success('تم إزالة الطالب من الحلقة');
+                messageApi.success('تم إزالة الطالب من الحلقة');
                 // تحديث القائمة الحالية
                 const res = await getHalaqaById(selectedHalaqa.id);
                 if (res.success) setCurrentHalaqaStudents(res.data.students);
                 loadData(); // لتحديث العدد في الجدول الرئيسي
             }
         } catch (error) {
-            message.error('خطأ في إزالة الطالب');
+            messageApi.error('خطأ في إزالة الطالب');
         }
     };
 
@@ -112,18 +123,18 @@ const Halaqat = () => {
             if (editingHalaqa) {
                 const result = await updateHalaqa(editingHalaqa.id, values);
                 if (result.success) {
-                    message.success('تم تحديث بيانات الحلقة بنجاح');
+                    messageApi.success('تم تحديث بيانات الحلقة بنجاح');
                 }
             } else {
                 const result = await createHalaqa(values);
                 if (result.success) {
-                    message.success('تم إضافة الحلقة بنجاح');
+                    messageApi.success('تم إضافة الحلقة بنجاح');
                 }
             }
             setIsModalVisible(false);
             loadData();
         } catch (error) {
-            message.error(error.response?.data?.message || 'حدث خطأ ما');
+            messageApi.error(error.response?.data?.message || 'حدث خطأ ما');
         }
     };
 
@@ -131,11 +142,11 @@ const Halaqat = () => {
         try {
             const result = await deleteHalaqa(id);
             if (result.success) {
-                message.success('تم حذف الحلقة بنجاح');
+                messageApi.success('تم حذف الحلقة بنجاح');
                 loadData();
             }
         } catch (error) {
-            message.error('خطأ في عملية الحذف');
+            messageApi.error('خطأ في عملية الحذف');
         }
     };
 
@@ -270,7 +281,7 @@ const Halaqat = () => {
             </Modal>
 
             <Modal
-                title={`إضافة طالب إلى حلقة: ${selectedHalaqa?.name}`}
+                title={`إضافة طلاب إلى حلقة: ${selectedHalaqa?.name}`}
                 open={isEnrollModalVisible}
                 onCancel={() => setIsEnrollModalVisible(false)}
                 footer={null}
@@ -281,13 +292,14 @@ const Halaqat = () => {
                     onFinish={handleEnroll}
                 >
                     <Form.Item
-                        name="studentId"
-                        label="اختر الطالب"
-                        rules={[{ required: true, message: 'يرجى اختيار الطالب' }]}
+                        name="studentIds"
+                        label="اختر الطلاب"
+                        rules={[{ required: true, message: 'يرجى اختيار طالب واحد على الأقل' }]}
                     >
                         <Select
+                            mode="multiple"
                             showSearch
-                            placeholder="ابحث عن اسم الطالب"
+                            placeholder="ابحث واختر الطلاب"
                             optionFilterProp="children"
                         >
                             {students.map(s => (
@@ -296,8 +308,8 @@ const Halaqat = () => {
                         </Select>
                     </Form.Item>
                     <Form.Item>
-                        <Button type="primary" htmlType="submit" block>
-                            إضافة الطالب
+                        <Button type="primary" htmlType="submit" block icon={<UserAddOutlined />}>
+                            إضافة الطلاب المحددين
                         </Button>
                     </Form.Item>
                 </Form>

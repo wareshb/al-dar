@@ -26,9 +26,9 @@ export const deleteHalaqa = async (id) => {
 };
 
 // تسجيل الطلاب في الحلقة
-export const enrollStudent = async (halaqaId, studentId) => {
+export const enrollStudents = async (halaqaId, studentIds) => {
     const response = await api.post(`/halaqat/${halaqaId}/enroll`, {
-        student_ids: [studentId]
+        student_ids: studentIds
     });
     return response.data;
 };
@@ -45,6 +45,6 @@ export default {
     createHalaqa,
     updateHalaqa,
     deleteHalaqa,
-    enrollStudent,
+    enrollStudents,
     removeStudent
 };

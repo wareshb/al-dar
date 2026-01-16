@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 // الحصول على جميع المعلمين
 exports.getAllTeachers = async (req, res) => {
@@ -58,20 +59,25 @@ exports.getTeacher = async (req, res) => {
 exports.createTeacher = async (req, res) => {
     try {
         const {
-            full_name, birth_date, birth_place, phone, photo_url,
+            full_name, username, password, birth_date, birth_place, phone, photo_url,
             email, specialization, is_mujaz, current_job, qualification,
             staff_type, address, is_active
         } = req.body;
 
+        let hashedPassword = null;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
+
         const [result] = await db.query(
             `INSERT INTO teachers (
-                full_name, birth_date, birth_place, phone, photo_url,
+                full_name, username, password, birth_date, birth_place, phone, photo_url,
                 email, specialization, is_mujaz, current_job, qualification,
                 staff_type, address, is_active
             ) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                full_name, birth_date || null, birth_place || null, phone || null, photo_url || null,
+                full_name, username || null, hashedPassword, birth_date || null, birth_place || null, phone || null, photo_url || null,
                 email || null, specialization || null, is_mujaz || false, current_job || null, qualification || null,
                 staff_type || 'teacher', address || null, is_active !== undefined ? is_active : true
             ]
@@ -103,24 +109,38 @@ exports.updateTeacher = async (req, res) => {
     try {
         const { id } = req.params;
         const {
-            full_name, birth_date, birth_place, phone, photo_url,
+            full_name, username, password, birth_date, birth_place, phone, photo_url,
             email, specialization, is_mujaz, current_job, qualification,
             staff_type, address, is_active
         } = req.body;
 
-        const [result] = await db.query(
-            `UPDATE teachers 
-       SET full_name = ?, birth_date = ?, birth_place = ?, phone = ?, photo_url = ?,
-           email = ?, specialization = ?, is_mujaz = ?, current_job = ?, qualification = ?,
-           staff_type = ?, address = ?, is_active = ?
-       WHERE id = ?`,
-            [
-                full_name, birth_date || null, birth_place || null, phone || null, photo_url || null,
+        let updateQuery = `UPDATE teachers 
+                           SET full_name = ?, username = ?, birth_date = ?, birth_place = ?, phone = ?, photo_url = ?,
+                               email = ?, specialization = ?, is_mujaz = ?, current_job = ?, qualification = ?,
+                               staff_type = ?, address = ?, is_active = ?`;
+        let params = [
+            full_name, username || null, birth_date || null, birth_place || null, phone || null, photo_url || null,
+            email || null, specialization || null, is_mujaz || false, current_job || null, qualification || null,
+            staff_type || 'teacher', address || null, is_active !== undefined ? is_active : true
+        ];
+
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateQuery = `UPDATE teachers 
+                           SET full_name = ?, username = ?, password = ?, birth_date = ?, birth_place = ?, phone = ?, photo_url = ?,
+                               email = ?, specialization = ?, is_mujaz = ?, current_job = ?, qualification = ?,
+                               staff_type = ?, address = ?, is_active = ?`;
+            params = [
+                full_name, username || null, hashedPassword, birth_date || null, birth_place || null, phone || null, photo_url || null,
                 email || null, specialization || null, is_mujaz || false, current_job || null, qualification || null,
-                staff_type || 'teacher', address || null, is_active !== undefined ? is_active : true,
-                id
-            ]
-        );
+                staff_type || 'teacher', address || null, is_active !== undefined ? is_active : true
+            ];
+        }
+
+        updateQuery += ` WHERE id = ?`;
+        params.push(id);
+
+        const [result] = await db.query(updateQuery, params);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({

@@ -3,14 +3,21 @@ const db = require('../config/db');
 // الحصول على جميع الحلقات
 exports.getAllHalaqat = async (req, res) => {
     try {
-        const [halaqat] = await db.query(
-            `SELECT h.*, 
+        let query = `SELECT h.*, 
         t.full_name as teacher_name,
         (SELECT COUNT(*) FROM halaqa_enrollments WHERE halaqa_id = h.id AND is_active = true) as students_count
        FROM halaqat h
-       LEFT JOIN teachers t ON h.teacher_id = t.id
-       ORDER BY h.name ASC`
-        );
+       LEFT JOIN teachers t ON h.teacher_id = t.id`;
+
+        const params = [];
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` WHERE h.teacher_id = ?`;
+            params.push(req.user.teacher_id);
+        }
+
+        query += ` ORDER BY h.name ASC`;
+
+        const [halaqat] = await db.query(query, params);
 
         res.json({
             success: true,
@@ -186,6 +193,31 @@ exports.enrollStudents = async (req, res) => {
     try {
         const { id } = req.params;
         const { student_ids, enroll_date } = req.body;
+
+        if (!student_ids || student_ids.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'يرجى اختيار طلاب للإضافة'
+            });
+        }
+
+        // التحقق مما إذا كان أي من الطلاب مسجل بالفعل في حلقة نشطة أخرى
+        const [existingEnrollments] = await db.query(
+            `SELECT he.student_id, s.full_name, h.name as halaqa_name 
+             FROM halaqa_enrollments he
+             JOIN students s ON he.student_id = s.id
+             JOIN halaqat h ON he.halaqa_id = h.id
+             WHERE he.student_id IN (?) AND he.is_active = true`,
+            [student_ids]
+        );
+
+        if (existingEnrollments.length > 0) {
+            const studentNames = existingEnrollments.map(e => `${e.full_name} (في حلقة: ${e.halaqa_name})`).join(', ');
+            return res.status(400).json({
+                success: false,
+                message: `لا يمكن إضافة الطلاب المذكورين لأنهم مسجلون بالفعل في حلقات أخرى: ${studentNames}`
+            });
+        }
 
         const date = enroll_date || new Date().toISOString().split('T')[0];
 

@@ -23,6 +23,7 @@ const authMiddleware = async (req, res, next) => {
 
         next();
     } catch (error) {
+        console.error('JWT Verification Error:', error.message);
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({
                 success: false,
