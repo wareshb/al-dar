@@ -24,4 +24,7 @@ router.get('/memorization', reportsController.getMemorizationReport);
 // تقرير الحلقات
 router.get('/halaqat', reportsController.getHalaqatReport);
 
+// تقرير المخالفات
+router.get('/violations', reportsController.getViolationsReport);
+
 module.exports = router;

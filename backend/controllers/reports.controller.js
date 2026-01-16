@@ -319,3 +319,60 @@ exports.getHalaqatReport = async (req, res) => {
         });
     }
 };
+
+// تقرير المخالفات
+exports.getViolationsReport = async (req, res) => {
+    try {
+        const { start_date, end_date, student_id } = req.query;
+
+        let query = `
+      SELECT 
+        v.id,
+        v.violation_date,
+        v.description,
+        v.action_taken,
+        s.full_name as student_name,
+        h.name as halaqa_name
+      FROM violations v
+      LEFT JOIN students s ON v.student_id = s.id
+      LEFT JOIN halaqa_enrollments he ON s.id = he.student_id AND he.is_active = true
+      LEFT JOIN halaqat h ON he.halaqa_id = h.id
+      WHERE 1=1
+    `;
+
+        const params = [];
+
+        // تصفية حسب المدرس إذا كان المستخدم مدرساً
+        if (req.user && req.user.role_name === 'teacher' && req.user.teacher_id) {
+            query += ` AND h.teacher_id = ?`;
+            params.push(req.user.teacher_id);
+        }
+
+        if (start_date && end_date) {
+            query += ` AND v.violation_date BETWEEN ? AND ?`;
+            params.push(start_date, end_date);
+        }
+
+        if (student_id) {
+            query += ` AND v.student_id = ?`;
+            params.push(student_id);
+        }
+
+        query += ` ORDER BY v.violation_date DESC`;
+
+        const [report] = await db.query(query, params);
+
+        res.json({
+            success: true,
+            data: report,
+            count: report.length,
+            period: { start_date, end_date }
+        });
+    } catch (error) {
+        console.error('Get violations report error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'حدث خطأ أثناء إنشاء تقرير المخالفات'
+        });
+    }
+};
