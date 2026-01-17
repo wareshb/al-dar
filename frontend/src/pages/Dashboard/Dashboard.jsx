@@ -7,6 +7,7 @@ import {
     CheckCircleOutlined
 } from '@ant-design/icons';
 import { getDashboardStats } from '../../services/dashboardService';
+import dayjs from 'dayjs';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -48,6 +49,7 @@ const Dashboard = () => {
             title: 'تاريخ التسجيل',
             dataIndex: 'registration_date',
             key: 'registration_date',
+            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-'
         },
         {
             title: 'الهاتف',
@@ -66,6 +68,7 @@ const Dashboard = () => {
             title: 'التاريخ',
             dataIndex: 'violation_date',
             key: 'violation_date',
+            render: (date) => date ? dayjs(date).format('YYYY-MM-DD') : '-'
         },
         {
             title: 'الوصف',

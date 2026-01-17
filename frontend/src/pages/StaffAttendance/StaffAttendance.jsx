@@ -15,7 +15,8 @@ import {
     TimePicker,
     Tooltip,
     Typography,
-    Badge
+    Badge,
+    Grid
 } from 'antd';
 import {
     SaveOutlined,
@@ -49,6 +50,7 @@ const StaffAttendance = () => {
         vacation: 0
     });
     const [expandedRows, setExpandedRows] = useState({});
+    const screens = Grid.useBreakpoint();
 
     useEffect(() => {
         loadAttendance();
@@ -160,7 +162,8 @@ const StaffAttendance = () => {
         const types = {
             teacher: { text: 'معلم', color: 'blue' },
             admin: { text: 'إداري', color: 'green' },
-            both: { text: 'معلم وإداري', color: 'purple' }
+            both: { text: 'معلم وإداري', color: 'purple' },
+            worker: { text: 'موظف عادي', color: 'cyan' }
         };
         const typeInfo = types[type] || { text: type, color: 'default' };
         return <Tag color={typeInfo.color}>{typeInfo.text}</Tag>;
@@ -182,9 +185,10 @@ const StaffAttendance = () => {
         },
         {
             title: 'الاسم',
+            title: 'الاسم',
             dataIndex: 'teacher_name',
             key: 'teacher_name',
-            fixed: 'left',
+            fixed: screens.md ? 'left' : undefined,
             width: 200,
             render: (text, record) => (
                 <Space>
@@ -317,9 +321,9 @@ const StaffAttendance = () => {
 
                 {/* الفلترة */}
                 <Card size="small" style={{ marginBottom: 24, background: '#fafafa' }}>
-                    <Space size="large" wrap>
-                        <Space>
-                            <Text strong>التاريخ:</Text>
+                    <Space size="large" wrap direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: screens.md ? 'auto' : '100%' }}>
+                        <Space direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: screens.md ? 'auto' : '100%' }}>
+                            <Text strong style={{ whiteSpace: 'nowrap' }}>التاريخ:</Text>
                             <DatePicker
                                 value={date}
                                 onChange={(newDate) => {
@@ -328,7 +332,7 @@ const StaffAttendance = () => {
                                 }}
                                 allowClear={false}
                                 format="YYYY-MM-DD"
-                                style={{ width: 200 }}
+                                style={{ width: screens.md ? 200 : '100%' }}
                             />
                         </Space>
                         <Button
@@ -436,7 +440,7 @@ const StaffAttendance = () => {
                             showSizeChanger: true,
                             showTotal: (total) => `إجمالي ${total} معلم/موظف`,
                         }}
-                        scroll={{ x: 1400 }}
+                        scroll={{ x: screens.md ? 1400 : 'max-content' }}
                         expandable={{
                             expandedRowRender,
                             expandedRowKeys: Object.keys(expandedRows).filter(key => expandedRows[key]),

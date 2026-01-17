@@ -5,6 +5,7 @@ exports.recordMemorization = async (req, res) => {
     try {
         const {
             student_id,
+            day,
             month,
             year,
             start_surah_id,
@@ -19,11 +20,12 @@ exports.recordMemorization = async (req, res) => {
 
         const [result] = await db.query(
             `INSERT INTO memorization 
-       (student_id, month, year, start_surah_id, start_ayah, end_surah_id, end_ayah, 
+       (student_id, day, month, year, start_surah_id, start_ayah, end_surah_id, end_ayah, 
         type, quality_rating, reviewed_by, notes) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 student_id,
+                day || 1,
                 month,
                 year,
                 start_surah_id || null,
@@ -68,7 +70,7 @@ exports.getStudentMemorization = async (req, res) => {
        LEFT JOIN surahs s2 ON m.end_surah_id = s2.id
        LEFT JOIN teachers t ON m.reviewed_by = t.id
        WHERE m.student_id = ?
-       ORDER BY m.year DESC, m.month DESC`,
+       ORDER BY m.year DESC, m.month DESC, m.day DESC`,
             [studentId]
         );
 
@@ -251,18 +253,13 @@ exports.getHalaqaStudentsWithProgress = async (req, res) => {
              FROM memorization m
              LEFT JOIN surahs s1 ON m.start_surah_id = s1.id
              LEFT JOIN surahs s2 ON m.end_surah_id = s2.id
-             WHERE (m.student_id, m.year, m.month, m.id) IN (
-                 SELECT student_id, year, month, MAX(id)
+             WHERE m.id IN (
+                 SELECT MAX(id)
                  FROM memorization
-                 WHERE (student_id, year, month) IN (
-                     SELECT student_id, MAX(year), MAX(month)
-                     FROM memorization
-                     WHERE student_id IN (?)
-                     GROUP BY student_id
-                 )
-                 GROUP BY student_id, year, month
+                 WHERE student_id IN (?)
+                 GROUP BY student_id
              )
-             ORDER BY m.year DESC, m.month DESC, m.id DESC`,
+             ORDER BY m.year DESC, m.month DESC, m.day DESC, m.id DESC`,
             [studentIds]
         );
 

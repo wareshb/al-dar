@@ -112,8 +112,8 @@ const Teachers = () => {
             dataIndex: 'staff_type',
             key: 'staff_type',
             render: (type) => {
-                const map = { teacher: 'معلم', admin: 'إداري', both: 'معلم وإداري' };
-                const colors = { teacher: 'blue', admin: 'orange', both: 'purple' };
+                const map = { teacher: 'معلم', admin: 'إداري', both: 'معلم وإداري', worker: 'موظف عادي' };
+                const colors = { teacher: 'blue', admin: 'orange', both: 'purple', worker: 'cyan' };
                 return <Tag color={colors[type]}>{map[type] || type}</Tag>;
             }
         },
@@ -251,6 +251,7 @@ const Teachers = () => {
                                     <Option value="teacher">معلم</Option>
                                     <Option value="admin">إداري</Option>
                                     <Option value="both">معلم وإداري</Option>
+                                    <Option value="worker">موظف عادي (بدون حساب)</Option>
                                 </Select>
                             </Form.Item>
                         </Col>
@@ -319,30 +320,41 @@ const Teachers = () => {
                         </Col>
                     </Row>
 
-                    <Divider orientation="right" plain>
-                        <Text type="secondary"><LockOutlined /> بيانات الحساب (لتسجيل الدخول)</Text>
-                    </Divider>
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prevValues, currentValues) => prevValues.staff_type !== currentValues.staff_type}
+                    >
+                        {({ getFieldValue }) =>
+                            getFieldValue('staff_type') !== 'worker' && (
+                                <>
+                                    <Divider orientation="right" plain>
+                                        <Text type="secondary"><LockOutlined /> بيانات الحساب (لتسجيل الدخول)</Text>
+                                    </Divider>
 
-                    <Row gutter={16}>
-                        <Col xs={24} sm={12}>
-                            <Form.Item
-                                name="username"
-                                label="اسم المستخدم"
-                                rules={[{ required: !editingTeacher, message: 'يرجى إدخال اسم المستخدم' }]}
-                            >
-                                <Input prefix={<UserOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="username" />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                            <Form.Item
-                                name="password"
-                                label={editingTeacher ? "كلمة المرور (اتركها فارغة لعدم التغيير)" : "كلمة المرور"}
-                                rules={[{ required: !editingTeacher, message: 'يرجى إدخال كلمة المرور' }]}
-                            >
-                                <Input.Password prefix={<LockOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="********" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
+                                    <Row gutter={16}>
+                                        <Col xs={24} sm={12}>
+                                            <Form.Item
+                                                name="username"
+                                                label="اسم المستخدم"
+                                                rules={[{ required: !editingTeacher, message: 'يرجى إدخال اسم المستخدم' }]}
+                                            >
+                                                <Input prefix={<UserOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="username" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} sm={12}>
+                                            <Form.Item
+                                                name="password"
+                                                label={editingTeacher ? "كلمة المرور (اتركها فارغة لعدم التغيير)" : "كلمة المرور"}
+                                                rules={[{ required: !editingTeacher, message: 'يرجى إدخال كلمة المرور' }]}
+                                            >
+                                                <Input.Password prefix={<LockOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} placeholder="********" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </>
+                            )
+                        }
+                    </Form.Item>
 
                     <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
                         <Button type="primary" htmlType="submit" block size="large" icon={editingTeacher ? <EditOutlined /> : <PlusOutlined />}>
@@ -393,7 +405,8 @@ const Teachers = () => {
                                 <div>
                                     {selectedTeacher.staff_type === 'teacher' ? <Tag color="blue">معلم</Tag> :
                                         selectedTeacher.staff_type === 'admin' ? <Tag color="orange">إداري</Tag> :
-                                            <Tag color="purple">معلم وإداري</Tag>}
+                                            selectedTeacher.staff_type === 'both' ? <Tag color="purple">معلم وإداري</Tag> :
+                                                <Tag color="cyan">موظف عادي</Tag>}
                                 </div>
                             </Col>
                             <Col span={12}>

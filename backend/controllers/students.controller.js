@@ -247,19 +247,48 @@ exports.createStudent = async (req, res) => {
             guardian_job,
             recommender_name_1,
             recommender_job_1,
+            recommender_phone_1,
+            recommender_address_1,
             recommender_name_2,
-            recommender_job_2
+            recommender_job_2,
+            recommender_phone_2,
+            recommender_address_2
         } = req.body;
+
+        let finalIdentificationNumber = identification_number;
+
+        if (!finalIdentificationNumber) {
+            const year = dayjs().year();
+            const prefix = year.toString();
+            const [rows] = await db.query(
+                `SELECT identification_number FROM students 
+                 WHERE identification_number LIKE ? 
+                 ORDER BY identification_number DESC LIMIT 1`,
+                [`${prefix}%`]
+            );
+
+            let nextNumber = 1;
+            if (rows.length > 0 && rows[0].identification_number) {
+                const lastId = rows[0].identification_number;
+                const lastNumber = parseInt(lastId.substring(4));
+                if (!isNaN(lastNumber)) {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+            finalIdentificationNumber = `${prefix}${nextNumber.toString().padStart(3, '0')}`;
+        }
+
 
         const [result] = await db.query(
             `INSERT INTO students (
         identification_number, registration_date, full_name, gender, birth_date, birth_place, 
         permanent_address, address, academic_level, hifz_amount, phone, is_active, photo_url,
         guardian_name, guardian_relationship, guardian_phone, guardian_job,
-        recommender_name_1, recommender_job_1, recommender_name_2, recommender_job_2
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        recommender_name_1, recommender_job_1, recommender_phone_1, recommender_address_1,
+        recommender_name_2, recommender_job_2, recommender_phone_2, recommender_address_2
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                identification_number || null,
+                finalIdentificationNumber,
                 registration_date,
                 full_name,
                 req.body.gender || 'male',
@@ -278,8 +307,12 @@ exports.createStudent = async (req, res) => {
                 guardian_job || null,
                 recommender_name_1 || null,
                 recommender_job_1 || null,
+                recommender_phone_1 || null,
+                recommender_address_1 || null,
                 recommender_name_2 || null,
-                recommender_job_2 || null
+                recommender_job_2 || null,
+                recommender_phone_2 || null,
+                recommender_address_2 || null
             ]
         );
 

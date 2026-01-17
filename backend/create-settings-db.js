@@ -20,6 +20,7 @@ async function createSettingsTable() {
         // إضافة الإعدادات الافتراضية إذا لم تكن موجودة
         const defaultSettings = [
             ['dar_name', 'دار البرهان لتعليم القرآن الكريم'],
+            ['dar_manager', ''],
             ['dar_logo', ''],
             ['dar_address', ''],
             ['dar_phone', ''],

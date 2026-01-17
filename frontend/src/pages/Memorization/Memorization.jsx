@@ -135,7 +135,7 @@ const Memorization = () => {
                     <div style={{ fontSize: '12px' }}>
                         <Tag color="cyan">{latest.type === 'memo' ? 'حفظ' : 'مراجعة'}</Tag>
                         <span>{latest.start_surah_name} ({latest.start_ayah}) - {latest.end_surah_name} ({latest.end_ayah})</span>
-                        <div style={{ color: '#888' }}>{latest.month}/{latest.year}</div>
+                        <div style={{ color: '#888' }}>{latest.day}/{latest.month}/{latest.year}</div>
                     </div>
                 );
             }
@@ -165,9 +165,9 @@ const Memorization = () => {
 
     const historyColumns = [
         {
-            title: 'الشهر/السنة',
-            key: 'month_year',
-            render: (r) => `${r.month}/${r.year}`
+            title: 'التاريخ',
+            key: 'date',
+            render: (r) => `${r.day || 1}/${r.month}/${r.year}`
         },
         {
             title: 'النوع',
@@ -189,6 +189,12 @@ const Memorization = () => {
             dataIndex: 'quality_rating',
             key: 'quality_rating',
             render: (val) => <Rate disabled defaultValue={val} />
+        },
+        {
+            title: 'ملاحظات',
+            dataIndex: 'notes',
+            key: 'notes',
+            render: (val) => val || '-'
         }
     ];
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Drawer, Grid, Button } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Drawer, Grid, Button, Avatar } from 'antd';
 import {
     DashboardOutlined,
     TeamOutlined,
@@ -14,6 +14,7 @@ import {
     SettingOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getSettings } from '../../services/settingsService';
 import './MainLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -26,6 +27,29 @@ const MainLayout = ({ children }) => {
     const [drawerVisible, setDrawerVisible] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const [settings, setSettings] = useState(null);
+
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            const result = await getSettings();
+            if (result.success) {
+                setSettings(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading settings in layout:', error);
+        }
+    };
+
+    const getFullUrl = (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        const baseUrl = import.meta.env?.VITE_API_URL || 'http://localhost:5000';
+        return `${baseUrl.replace(/\/$/, '')}${path.startsWith('/') ? '' : '/'}${path}`;
+    };
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -113,14 +137,30 @@ const MainLayout = ({ children }) => {
                     className="desktop-sider"
                 >
                     <div className="logo">
-                        {!collapsed ? '🕌 دار البرهان' : '🕌'}
+                        {settings?.dar_logo ? (
+                            <Avatar
+                                src={getFullUrl(settings.dar_logo)}
+                                size={collapsed ? 32 : 48}
+                                style={{ marginLeft: collapsed ? 0 : 8 }}
+                            />
+                        ) : (
+                            '🕌 '
+                        )}
+                        {!collapsed && (settings?.dar_name || 'دار البرهان')}
                     </div>
                     {menu}
                 </Sider>
             )}
 
             <Drawer
-                title="🕌 دار البرهان"
+                title={
+                    <div style={{ color: '#fff', display: 'flex', alignItems: 'center' }}>
+                        {settings?.dar_logo ? (
+                            <Avatar src={getFullUrl(settings.dar_logo)} size={32} style={{ marginLeft: 8 }} />
+                        ) : '🕌 '}
+                        {settings?.dar_name || 'دار البرهان'}
+                    </div>
+                }
                 placement="right"
                 onClose={() => setDrawerVisible(false)}
                 open={drawerVisible}
@@ -147,7 +187,16 @@ const MainLayout = ({ children }) => {
                                 style={{ fontSize: '18px', marginRight: -12 }}
                             />
                         )}
-                        <h2>{isMobile ? 'دار البرهان' : 'نظام إدارة دار البرهان'}</h2>
+                        <h2 style={{ display: 'flex', alignItems: 'center', margin: 0 }}>
+                            {settings?.dar_logo && (
+                                <Avatar
+                                    src={getFullUrl(settings.dar_logo)}
+                                    size={80}
+                                    style={{ marginLeft: 12 }}
+                                />
+                            )}
+                            {isMobile ? (settings?.dar_name || 'دار البرهان') : `نظام إدارة ${settings?.dar_name || 'دار البرهان'}`}
+                        </h2>
                         <div className="user-info">
                             <span className="user-name">{user.full_name || user.username}</span>
                             <LogoutOutlined

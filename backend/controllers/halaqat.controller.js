@@ -91,12 +91,12 @@ exports.getHalaqa = async (req, res) => {
 // إنشاء حلقة جديدة
 exports.createHalaqa = async (req, res) => {
     try {
-        const { name, start_date, teacher_id, schedules } = req.body;
+        const { name, start_date, teacher_id, schedules, level, description } = req.body;
 
         const [result] = await db.query(
-            `INSERT INTO halaqat (name, start_date, teacher_id) 
-       VALUES (?, ?, ?)`,
-            [name, start_date || null, teacher_id || null]
+            `INSERT INTO halaqat (name, start_date, teacher_id, level, description) 
+       VALUES (?, ?, ?, ?, ?)`,
+            [name, start_date || null, teacher_id || null, level || null, description || null]
         );
 
         const halaqaId = result.insertId;
@@ -132,13 +132,13 @@ exports.createHalaqa = async (req, res) => {
 exports.updateHalaqa = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, start_date, teacher_id } = req.body;
+        const { name, start_date, teacher_id, level, description } = req.body;
 
         const [result] = await db.query(
             `UPDATE halaqat 
-       SET name = ?, start_date = ?, teacher_id = ?
+       SET name = ?, start_date = ?, teacher_id = ?, level = ?, description = ?
        WHERE id = ?`,
-            [name, start_date || null, teacher_id || null, id]
+            [name, start_date || null, teacher_id || null, level || null, description || null, id]
         );
 
         if (result.affectedRows === 0) {

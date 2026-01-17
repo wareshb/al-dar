@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, DatePicker, Select, Button, Space, message, Tabs, Tag } from 'antd';
+import { Card, Row, Col, Statistic, Table, DatePicker, Select, Button, Space, message, Tabs, Tag, Rate } from 'antd';
 import {
     FileTextOutlined,
     PrinterOutlined,
     FilterOutlined,
     FileExcelOutlined
 } from '@ant-design/icons';
-import { getGeneralReport, getAttendanceReport, getStaffAttendanceReport } from '../../services/reportService';
+import { getGeneralReport, getAttendanceReport, getStaffAttendanceReport, getViolationsReport } from '../../services/reportService';
+import { getStudentProgress } from '../../services/memorizationService';
 import { getStudents } from '../../services/studentService';
 import { getHalaqat } from '../../services/halaqaService';
 import { getTeachers } from '../../services/teacherService';
@@ -21,6 +22,9 @@ const Reports = () => {
     const [data, setData] = useState(null);
     const [attendanceData, setAttendanceData] = useState([]);
     const [staffAttendanceData, setStaffAttendanceData] = useState([]);
+
+    const [violationsData, setViolationsData] = useState([]);
+    const [progressData, setProgressData] = useState([]);
     const [dates, setDates] = useState([dayjs().startOf('month'), dayjs()]);
     const [activeTab, setActiveTab] = useState('general');
 
@@ -43,6 +47,8 @@ const Reports = () => {
             loadAttendance();
         } else if (activeTab === 'staff-attendance') {
             loadStaffAttendance();
+        } else if (activeTab === 'violations') {
+            loadViolations();
         }
     }, [activeTab]);
 
@@ -136,6 +142,52 @@ const Reports = () => {
         }
     };
 
+    const loadViolations = async () => {
+        setLoading(true);
+        try {
+            const params = {
+                start_date: dates[0].format('YYYY-MM-DD'),
+                end_date: dates[1].format('YYYY-MM-DD')
+            };
+
+            if (selectedStudent) params.student_id = selectedStudent;
+            if (selectedHalaqa) params.halaqa_id = selectedHalaqa;
+
+            const result = await getViolationsReport(params);
+            if (result.success) {
+                setViolationsData(result.data);
+            }
+        } catch (error) {
+            message.error('خطأ في تحميل تقرير المخالفات');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadProgress = async () => {
+        if (!selectedStudent) {
+            setProgressData([]);
+            return;
+        }
+        setLoading(true);
+        try {
+            const result = await getStudentProgress(selectedStudent);
+            if (result.success) {
+                // Filter by date if needed, or return all
+                // currently showing all, or client side filter
+                const filtered = result.data.filter(item => {
+                    const itemDate = dayjs(`${item.year}-${item.month}-${item.day || 1}`);
+                    return itemDate.isAfter(dates[0].subtract(1, 'day')) && itemDate.isBefore(dates[1].add(1, 'day'));
+                });
+                setProgressData(filtered);
+            }
+        } catch (error) {
+            message.error('خطأ في تحميل سجل الإنجاز');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleClearFilters = () => {
         setSelectedStudent(null);
         setSelectedHalaqa(null);
@@ -149,6 +201,8 @@ const Reports = () => {
             loadAttendance();
         } else if (activeTab === 'staff-attendance') {
             loadStaffAttendance();
+        } else if (activeTab === 'violations') {
+            loadViolations();
         }
     };
 
@@ -211,6 +265,59 @@ const Reports = () => {
         XLSX.writeFile(wb, `تقرير_حضور_الموظفين_${dates[0].format('YYYY-MM-DD')}.xlsx`);
     };
 
+    const exportViolationsToExcel = () => {
+        if (!violationsData || violationsData.length === 0) {
+            message.warning('لا توجد بيانات للتصدير');
+            return;
+        }
+
+        const exportData = violationsData.map(item => ({
+            'اسم الطالب': item.student_name,
+            'الحلقة': item.halaqa_name,
+            'نوع المخالفة': item.violation_type,
+            'التاريخ': dayjs(item.violation_date).format('YYYY-MM-DD'),
+            'الملاحظات': item.notes || ''
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "تقرير المخالفات");
+
+        if (!wb.Workbook) wb.Workbook = {};
+        if (!wb.Workbook.Views) wb.Workbook.Views = [];
+        if (!wb.Workbook.Views[0]) wb.Workbook.Views[0] = {};
+        wb.Workbook.Views[0].RTL = true;
+
+        XLSX.writeFile(wb, `تقرير_مخالفات_الطلاب_${dates[0].format('YYYY-MM-DD')}.xlsx`);
+    };
+
+    const exportProgressToExcel = () => {
+        if (!progressData || progressData.length === 0) {
+            message.warning('لا توجد بيانات للتصدير');
+            return;
+        }
+
+        const exportData = progressData.map(item => ({
+            'التاريخ': `${item.day || 1}/${item.month}/${item.year}`,
+            'النوع': item.type === 'memo' ? 'حفظ' : 'مراجعة',
+            'من': `${item.start_surah_name || ''} (${item.start_ayah || '-'})`,
+            'إلى': `${item.end_surah_name || ''} (${item.end_ayah || '-'})`,
+            'التقييم': item.quality_rating,
+            'الملاحظات': item.notes || ''
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "تقرير الإنجاز");
+
+        if (!wb.Workbook) wb.Workbook = {};
+        if (!wb.Workbook.Views) wb.Workbook.Views = [];
+        if (!wb.Workbook.Views[0]) wb.Workbook.Views[0] = {};
+        wb.Workbook.Views[0].RTL = true;
+
+        XLSX.writeFile(wb, `تقرير_انجاز_الطالب_${dates[0].format('YYYY-MM-DD')}.xlsx`);
+    };
+
     const staffAttendanceColumns = [
         {
             title: 'اسم الموظف',
@@ -223,8 +330,9 @@ const Reports = () => {
             dataIndex: 'staff_type',
             key: 'staff_type',
             render: (type) => {
-                const map = { teacher: 'معلم', admin: 'إداري', both: 'معلم وإداري' };
-                return <Tag>{map[type] || type}</Tag>;
+                const map = { teacher: 'معلم', admin: 'إداري', both: 'معلم وإداري', worker: 'موظف عادي' };
+                const colors = { teacher: 'blue', admin: 'green', both: 'purple', worker: 'cyan' };
+                return <Tag color={colors[type]}>{map[type] || type}</Tag>;
             }
         },
         { title: 'إجمالي الأيام', dataIndex: 'total_days', key: 'total_days', align: 'center' },
@@ -245,6 +353,64 @@ const Reports = () => {
             ),
             sorter: (a, b) => a.attendance_percentage - b.attendance_percentage
         },
+    ];
+
+    const violationsColumns = [
+        {
+            title: 'اسم الطالب',
+            dataIndex: 'student_name',
+            key: 'student_name',
+            sorter: (a, b) => a.student_name.localeCompare(b.student_name)
+        },
+        { title: 'الحلقة', dataIndex: 'halaqa_name', key: 'halaqa_name' },
+        {
+            title: 'التاريخ',
+            dataIndex: 'violation_date',
+            key: 'violation_date',
+            render: (date) => dayjs(date).format('YYYY-MM-DD')
+        },
+        {
+            title: 'نوع المخالفة',
+            dataIndex: 'violation_type',
+            key: 'violation_type',
+            render: (type) => <Tag color="red">{type}</Tag>
+        },
+        { title: 'الملاحظات', dataIndex: 'notes', key: 'notes' },
+    ];
+
+    const progressColumns = [
+        {
+            title: 'التاريخ',
+            key: 'date',
+            render: (r) => `${r.day || 1}/${r.month}/${r.year}`
+        },
+        {
+            title: 'النوع',
+            key: 'type',
+            render: (r) => <Tag color={r.type === 'memo' ? 'blue' : 'green'}>{r.type === 'memo' ? 'حفظ' : 'مراجعة'}</Tag>
+        },
+        {
+            title: 'من',
+            key: 'from',
+            render: (r) => `${r.start_surah_name || ''} (${r.start_ayah || '-'})`
+        },
+        {
+            title: 'إلى',
+            key: 'to',
+            render: (r) => `${r.end_surah_name || ''} (${r.end_ayah || '-'})`
+        },
+        {
+            title: 'التقييم',
+            dataIndex: 'quality_rating',
+            key: 'quality_rating',
+            render: (val) => <Rate disabled defaultValue={val} />
+        },
+        {
+            title: 'الملاحظات',
+            dataIndex: 'notes',
+            key: 'notes',
+            render: (val) => val || '-'
+        }
     ];
 
     const attendanceColumns = [
@@ -485,6 +651,145 @@ const Reports = () => {
                         dataSource={staffAttendanceData}
                         rowKey="teacher_id"
                         columns={staffAttendanceColumns}
+                        loading={loading}
+                        scroll={{ x: 'max-content' }}
+                        pagination={{ pageSize: 10 }}
+                    />
+                </div>
+            )
+        },
+        {
+            key: 'violations',
+            label: 'تقارير مخالفات الطلاب',
+            children: (
+                <div style={{ marginTop: 8 }}>
+                    <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
+                        <Space wrap>
+                            <Select
+                                placeholder="اختر طالب"
+                                style={{ width: 200 }}
+                                allowClear
+                                showSearch
+                                filterOption={(input, option) =>
+                                    option.children.toLowerCase().includes(input.toLowerCase())
+                                }
+                                value={selectedStudent}
+                                onChange={setSelectedStudent}
+                            >
+                                {students.map(student => (
+                                    <Option key={student.id} value={student.id}>
+                                        {student.full_name}
+                                    </Option>
+                                ))}
+                            </Select>
+
+                            <Select
+                                placeholder="اختر حلقة"
+                                style={{ width: 200 }}
+                                allowClear
+                                showSearch
+                                filterOption={(input, option) =>
+                                    option.children.toLowerCase().includes(input.toLowerCase())
+                                }
+                                value={selectedHalaqa}
+                                onChange={setSelectedHalaqa}
+                            >
+                                {halaqat.map(halaqa => (
+                                    <Option key={halaqa.id} value={halaqa.id}>
+                                        {halaqa.name}
+                                    </Option>
+                                ))}
+                            </Select>
+
+                            <Button
+                                onClick={handleClearFilters}
+                                disabled={!selectedStudent && !selectedHalaqa}
+                            >
+                                مسح الفلاتر
+                            </Button>
+
+                            <Button
+                                type="primary"
+                                icon={<FilterOutlined />}
+                                onClick={loadViolations}
+                            >
+                                تطبيق الفلتر
+                            </Button>
+                        </Space>
+                    </Card>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <h3 style={{ margin: 0 }}>سجل مخالفات الطلاب</h3>
+                        <Button
+                            icon={<FileExcelOutlined />}
+                            onClick={exportViolationsToExcel}
+                            style={{ backgroundColor: '#217346', color: 'white' }}
+                        >
+                            تصدير إلى Excel
+                        </Button>
+                    </div>
+                    <Table
+                        dataSource={violationsData}
+                        rowKey="id"
+                        columns={violationsColumns}
+                        loading={loading}
+                        scroll={{ x: 'max-content' }}
+                        pagination={{ pageSize: 10 }}
+                    />
+                </div>
+            )
+        },
+        {
+            key: 'progress',
+            label: 'تقرير إنجازات الطالب',
+            children: (
+                <div style={{ marginTop: 8 }}>
+                    <Card size="small" style={{ marginBottom: 16, background: '#fafafa' }}>
+                        <Space wrap>
+                            <Select
+                                placeholder="اختر طالب"
+                                style={{ width: 300 }}
+                                allowClear
+                                showSearch
+                                filterOption={(input, option) =>
+                                    option.children.toLowerCase().includes(input.toLowerCase())
+                                }
+                                value={selectedStudent}
+                                onChange={setSelectedStudent}
+                            >
+                                {students.map(student => (
+                                    <Option key={student.id} value={student.id}>
+                                        {student.full_name}
+                                    </Option>
+                                ))}
+                            </Select>
+
+                            <Button
+                                type="primary"
+                                icon={<FilterOutlined />}
+                                onClick={loadProgress}
+                                disabled={!selectedStudent}
+                            >
+                                عرض السجل
+                            </Button>
+                        </Space>
+                    </Card>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <h3 style={{ margin: 0 }}>سجل الحفظ والمراجعة</h3>
+                        <Button
+                            icon={<FileExcelOutlined />}
+                            onClick={exportProgressToExcel}
+                            style={{ backgroundColor: '#217346', color: 'white' }}
+                            disabled={!progressData.length}
+                        >
+                            تصدير إلى Excel
+                        </Button>
+                    </div>
+                    <Table
+                        dataSource={progressData}
+                        rowKey="id"
+                        columns={progressColumns}
                         loading={loading}
                         scroll={{ x: 'max-content' }}
                         pagination={{ pageSize: 10 }}

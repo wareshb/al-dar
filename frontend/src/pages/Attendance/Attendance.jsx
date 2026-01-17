@@ -18,7 +18,8 @@ import {
     Badge,
     Typography,
     Divider,
-    App
+    App,
+    Grid
 } from 'antd';
 import {
     SaveOutlined,
@@ -54,6 +55,7 @@ const Attendance = () => {
     });
     const [expandedRows, setExpandedRows] = useState({});
     const { message: messageApi } = App.useApp();
+    const screens = Grid.useBreakpoint();
 
     useEffect(() => {
         loadHalaqat();
@@ -238,7 +240,7 @@ const Attendance = () => {
             title: 'اسم الطالب',
             dataIndex: 'student_name',
             key: 'student_name',
-            fixed: 'left',
+            fixed: screens.md ? 'left' : undefined,
             width: 200,
             render: (text, record) => (
                 <Space>
@@ -382,11 +384,11 @@ const Attendance = () => {
                 {/* الفلترة */}
                 <Card size="small" style={{ marginBottom: 24 }}>
                     <Space size="large" wrap>
-                        <Space>
-                            <Text strong>الحلقة:</Text>
+                        <Space direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: screens.md ? 'auto' : '100%' }}>
+                            <Text strong style={{ whiteSpace: 'nowrap' }}>الحلقة:</Text>
                             <Select
                                 placeholder="اختر الحلقة"
-                                style={{ width: 250 }}
+                                style={{ width: screens.md ? 250 : '100%', minWidth: 200 }}
                                 onChange={(value) => {
                                     setSelectedHalaqa(value);
                                     setStudents([]);
@@ -399,8 +401,8 @@ const Attendance = () => {
                                 ))}
                             </Select>
                         </Space>
-                        <Space>
-                            <Text strong>التاريخ:</Text>
+                        <Space direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: screens.md ? 'auto' : '100%' }}>
+                            <Text strong style={{ whiteSpace: 'nowrap' }}>التاريخ:</Text>
                             <DatePicker
                                 value={date}
                                 onChange={(newDate) => {
@@ -410,7 +412,7 @@ const Attendance = () => {
                                 }}
                                 allowClear={false}
                                 format="YYYY-MM-DD"
-                                style={{ width: 200 }}
+                                style={{ width: screens.md ? 200 : '100%' }}
                             />
                         </Space>
                         <Button
@@ -499,7 +501,7 @@ const Attendance = () => {
                             showSizeChanger: true,
                             showTotal: (total) => `إجمالي ${total} طالب`,
                         }}
-                        scroll={{ x: 1200 }}
+                        scroll={{ x: screens.md ? 1200 : 'max-content' }}
                         expandable={{
                             expandedRowRender,
                             expandedRowKeys: Object.keys(expandedRows).filter(key => expandedRows[key]),

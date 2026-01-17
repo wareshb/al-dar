@@ -87,12 +87,14 @@ INSERT INTO `attendances` (`id`, `attendance_date`, `student_id`, `teacher_id`, 
 --
 
 CREATE TABLE `halaqat` (
-  `id` bigint(20) UNSIGNED NOT NULL,
-  `name` varchar(120) NOT NULL,
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `level` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
   `start_date` date DEFAULT NULL,
-  `teacher_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `teacher_id` bigint UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -272,8 +274,12 @@ CREATE TABLE `students` (
   `guardian_job` varchar(100) DEFAULT NULL,
   `recommender_name_1` varchar(120) DEFAULT NULL,
   `recommender_job_1` varchar(100) DEFAULT NULL,
+  `recommender_phone_1` varchar(20) DEFAULT NULL,
+  `recommender_address_1` text DEFAULT NULL,
   `recommender_name_2` varchar(120) DEFAULT NULL,
   `recommender_job_2` varchar(100) DEFAULT NULL,
+  `recommender_phone_2` varchar(20) DEFAULT NULL,
+  `recommender_address_2` text DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -513,6 +519,36 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role_id`, `teacher_id`, `is_active`, `created_at`, `updated_at`) VALUES
 (3, 'aaa', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'المدير العام', 'admin1@daralbrhaan.com', 1, NULL, 1, '2026-01-14 18:47:15', '2026-01-14 18:47:15'),
 (4, 'admin', '$2a$10$IuD1bylKRBbsFR8lVTbknuIbEySG/GnzHs8fYLFG0rOiGO4pA8kbq', 'المدير العام', 'admin@daralbrhaan.com', 1, NULL, 1, '2026-01-14 19:01:14', '2026-01-14 19:01:14');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `settings`
+--
+
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(100) NOT NULL,
+  `setting_value` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `setting_key` (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `settings`
+--
+
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
+('dar_name', 'دار البرهان لتعليم القرآن '),
+('dar_manager', 'محمد عبدالله'),
+('dar_logo', ''),
+('dar_address', ''),
+('dar_phone', ''),
+('dar_vision', ''),
+('dar_message', ''),
+('report_header_text', '');
 
 -- --------------------------------------------------------
 
