@@ -17,7 +17,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getSettings } from '../../services/settingsService';
 import './MainLayout.css';
 
-const { Header, Sider, Content } = Layout;
+const { Header, Sider, Content, Footer } = Layout;
 const { useBreakpoint } = Grid;
 
 const MainLayout = ({ children }) => {
@@ -211,6 +211,9 @@ const MainLayout = ({ children }) => {
                 <Content className="main-content">
                     {children}
                 </Content>
+                <Footer style={{ textAlign: 'center', background: '#f0f2f5', padding: '10px 0' }}>
+                    حقوق النشر محفوظة للمبرمج بشار الوريش © {new Date().getFullYear()}
+                </Footer>
             </Layout>
         </Layout>
     );

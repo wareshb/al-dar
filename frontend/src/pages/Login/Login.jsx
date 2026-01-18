@@ -90,9 +90,13 @@ const Login = () => {
                         </Button>
                     </Form.Item>
                 </Form>
+                <div style={{ textAlign: 'center', marginTop: 16, color: '#666', fontSize: '12px' }}>
+                    حقوق النشر محفوظة للمبرمج بشار الوريش © {new Date().getFullYear()}
+                </div>
             </Card>
         </div>
     );
 };
 
 export default Login;
+
