@@ -167,39 +167,58 @@ const Students = () => {
             title: 'المعرف',
             dataIndex: 'identification_number',
             key: 'identification_number',
+            sorter: (a, b) => (a.identification_number || '').localeCompare(b.identification_number || ''),
         },
         {
             title: 'الاسم الكامل',
             dataIndex: 'full_name',
             key: 'full_name',
+            sorter: (a, b) => (a.full_name || '').localeCompare(b.full_name || ''),
         },
         {
             title: 'الحلقة',
             dataIndex: 'halaqa_name',
             key: 'halaqa_name',
+            sorter: (a, b) => (a.halaqa_name || '').localeCompare(b.halaqa_name || ''),
             render: (name) => name || <Tag color="default">غير مسجل</Tag>,
         },
         {
             title: 'الجنس',
             dataIndex: 'gender',
             key: 'gender',
+            filters: [
+                { text: 'ذكر', value: 'male' },
+                { text: 'أنثى', value: 'female' },
+            ],
+            onFilter: (value, record) => record.gender === value,
             render: (gender) => (gender === 'male' ? 'ذكر' : 'أنثى'),
         },
         {
             title: 'رقم الهاتف',
             dataIndex: 'phone',
             key: 'phone',
+            sorter: (a, b) => (a.phone || '').localeCompare(b.phone || ''),
         },
         {
             title: 'تاريخ التسجيل',
             dataIndex: 'registration_date',
             key: 'registration_date',
+            sorter: (a, b) => dayjs(a.registration_date).unix() - dayjs(b.registration_date).unix(),
             render: (date) => (date ? dayjs(date).format('YYYY-MM-DD') : '-'),
         },
         {
             title: 'الحالة',
             dataIndex: 'is_active',
             key: 'is_active',
+            filters: [
+                { text: 'نشط', value: 1 },
+                { text: 'غير نشط', value: 0 },
+            ],
+            onFilter: (value, record) => {
+                // التعامل مع القيم كأرقام أو منطقية حسب ما يأتي من الباكيند
+                const isActive = record.is_active === true || record.is_active === 1;
+                return (value === 1 && isActive) || (value === 0 && !isActive);
+            },
             render: (active) => (active ? <Tag color="success">نشط</Tag> : <Tag color="error">غير نشط</Tag>),
         },
         {

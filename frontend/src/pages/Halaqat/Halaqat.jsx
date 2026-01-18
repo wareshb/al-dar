@@ -152,25 +152,38 @@ const Halaqat = () => {
 
     const columns = [
         {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 70,
+            sorter: (a, b) => a.id - b.id,
+        },
+        {
             title: 'اسم الحلقة',
             dataIndex: 'name',
             key: 'name',
+            sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
         },
         {
             title: 'المعلم المسئول',
             dataIndex: 'teacher_name',
             key: 'teacher_name',
+            sorter: (a, b) => (a.teacher_name || '').localeCompare(b.teacher_name || ''),
         },
         {
             title: 'عدد الطلاب',
             dataIndex: 'students_count',
             key: 'students_count',
+            sorter: (a, b) => (a.students_count || 0) - (b.students_count || 0),
             render: (count) => count || 0
         },
         {
             title: 'المستوى',
             dataIndex: 'level',
             key: 'level',
+            sorter: (a, b) => (a.level || '').localeCompare(b.level || ''),
+            filters: Array.from(new Set(halaqat.map(h => h.level).filter(Boolean))).map(level => ({ text: level, value: level })),
+            onFilter: (value, record) => record.level === value,
         },
         {
             title: 'وصف',

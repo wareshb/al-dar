@@ -75,14 +75,25 @@ const Violations = () => {
 
     const columns = [
         {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 70,
+            sorter: (a, b) => a.id - b.id,
+        },
+        {
             title: 'الطالب',
             dataIndex: 'student_name',
             key: 'student_name',
+            sorter: (a, b) => (a.student_name || '').localeCompare(b.student_name || ''),
+            filters: Array.from(new Set(violations.map(v => v.student_name).filter(Boolean))).map(name => ({ text: name, value: name })),
+            onFilter: (value, record) => record.student_name === value,
         },
         {
             title: 'التاريخ',
             dataIndex: 'violation_date',
             key: 'violation_date',
+            sorter: (a, b) => dayjs(a.violation_date).unix() - dayjs(b.violation_date).unix(),
             render: (date) => dayjs(date).format('YYYY-MM-DD'),
         },
         {

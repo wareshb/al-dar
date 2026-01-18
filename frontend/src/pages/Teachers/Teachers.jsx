@@ -98,19 +98,35 @@ const Teachers = () => {
 
     const columns = [
         {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 70,
+            sorter: (a, b) => a.id - b.id,
+        },
+        {
             title: 'الاسم الكامل',
             dataIndex: 'full_name',
             key: 'full_name',
+            sorter: (a, b) => a.full_name.localeCompare(b.full_name),
         },
         {
             title: 'رقم الهاتف',
             dataIndex: 'phone',
             key: 'phone',
+            sorter: (a, b) => a.phone.localeCompare(b.phone),
         },
         {
             title: 'نوع الموظف',
             dataIndex: 'staff_type',
             key: 'staff_type',
+            filters: [
+                { text: 'معلم', value: 'teacher' },
+                { text: 'إداري', value: 'admin' },
+                { text: 'معلم وإداري', value: 'both' },
+                { text: 'موظف عادي', value: 'worker' },
+            ],
+            onFilter: (value, record) => record.staff_type === value,
             render: (type) => {
                 const map = { teacher: 'معلم', admin: 'إداري', both: 'معلم وإداري', worker: 'موظف عادي' };
                 const colors = { teacher: 'blue', admin: 'orange', both: 'purple', worker: 'cyan' };
@@ -121,11 +137,17 @@ const Teachers = () => {
             title: 'الوظيفة الحالية',
             dataIndex: 'current_job',
             key: 'current_job',
+            sorter: (a, b) => (a.current_job || '').localeCompare(b.current_job || ''),
         },
         {
             title: 'مجاز؟',
             dataIndex: 'is_mujaz',
             key: 'is_mujaz',
+            filters: [
+                { text: 'نعم', value: true },
+                { text: 'لا', value: false },
+            ],
+            onFilter: (value, record) => record.is_mujaz === value,
             render: (mujaz) => (
                 mujaz ? <Tag color="success" icon={<CheckCircleOutlined />}>نعم</Tag> : <Tag color="default" icon={<CloseCircleOutlined />}>لا</Tag>
             ),
@@ -134,6 +156,11 @@ const Teachers = () => {
             title: 'الحالة',
             dataIndex: 'is_active',
             key: 'is_active',
+            filters: [
+                { text: 'نشط', value: true },
+                { text: 'غير نشط', value: false },
+            ],
+            onFilter: (value, record) => record.is_active === value,
             render: (active) => (
                 active ? <Tag color="processing">نشط</Tag> : <Tag color="error">غير نشط</Tag>
             ),
